@@ -1,0 +1,612 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, sans-serif;
+  --bg: #101117;
+  --ink: #eeeef2;
+  --muted: #b4b6c4;
+  --line: #b4b6c426;
+  --blue: #58c4dd;
+  --purple: #9a72d8;
+  --yellow: #f4ce72;
+  --purple-text: #b9a0ee;
+  --red: #fc6255;
+  --speed: 1.25;
+  background: var(--bg);
+  color: var(--muted);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--bg); }
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+}
+a { color: var(--blue); text-underline-offset: 4px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+.empty-state { margin: 0; padding: 64px 24px; text-align: center; }
+
+/* Apresentação: palco 1600 × 900 escalado para caber na janela. */
+.deck { overflow: hidden; height: 100vh; }
+.viewport {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  overflow: auto;
+}
+.stage-frame { position: relative; margin: auto; flex: none; }
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform-origin: 0 0;
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  padding: 96px 120px 72px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .45s ease, visibility 0s .45s;
+}
+.slide.active { opacity: 1; visibility: visible; transition: opacity .45s ease; }
+
+/* Controles fixos: índice à esquerda, etapas, PDF e zoom à direita. */
+.toolbar {
+  position: fixed;
+  z-index: 3;
+  inset: 16px 16px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+.toolbar > * { pointer-events: auto; }
+.toolbar-group { display: flex; align-items: center; gap: 8px; }
+.step-dots { display: flex; gap: 6px; margin-right: 4px; }
+.step-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background .2s; }
+.step-dots i.on { background: var(--blue); }
+/* Dentro do slide para manter posição e numeração também no PDF. */
+.counter {
+  position: absolute;
+  right: 120px;
+  bottom: 28px;
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.icon-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #181a22cc;
+  color: var(--ink);
+  font: 22px/1 Arial, sans-serif;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.icon-button:hover { border-color: var(--blue); background: #58c4dd1a; }
+.burger { display: grid; gap: 4px; width: 18px; }
+.burger span { height: 2px; background: currentColor; border-radius: 2px; transition: transform .25s, opacity .25s; }
+.open .burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.open .burger span:nth-child(2) { opacity: 0; }
+.open .burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.index-panel {
+  position: fixed;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(360px, 100vw);
+  padding: 72px 24px 24px;
+  background: #15161e;
+  border-right: 1px solid var(--line);
+  box-shadow: 12px 0 40px #0008;
+  overflow-y: auto;
+  animation: slide-in .25s ease;
+}
+@keyframes slide-in { from { transform: translateX(-24px); opacity: 0; } }
+.index-title { margin: 0 0 12px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+.index-panel ol { margin: 0 0 24px; padding-left: 24px; display: grid; gap: 4px; }
+.index-panel li::marker { color: var(--muted); }
+.index-panel ol a { display: block; padding: 8px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.index-panel ol a:hover { background: #ffffff0d; }
+.index-panel ol a[aria-current] { background: #58c4dd1f; color: var(--blue); }
+.index-lab { display: inline-block; padding: 8px 10px; }
+
+/* Slide 1: capa. */
+.cover { align-items: center; text-align: center; justify-content: center; gap: 0; }
+.kicker {
+  margin: 0 0 20px;
+  color: var(--blue);
+  font-size: 22px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.cover h1 { margin: 0; color: var(--ink); font-size: 104px; line-height: 1.02; letter-spacing: -.02em; }
+.hl { color: var(--yellow); }
+.lede { margin: 28px 0 0; font-size: 30px; line-height: 1.45; }
+.lede strong { color: var(--ink); }
+.lede em { color: var(--yellow); font-style: normal; }
+.band { margin: 36px 0 0; width: 1280px; aspect-ratio: 4 / 1; }
+.band video, .band img { width: 100%; height: 100%; display: block; }
+.print-only { display: none !important; }
+.lab-button {
+  margin-top: 28px;
+  padding: 16px 30px;
+  border: 1.5px solid var(--blue);
+  border-radius: 999px;
+  background: #58c4dd14;
+  color: var(--blue);
+  font-size: 24px;
+  text-decoration: none;
+  transition: background .2s, color .2s, transform .2s;
+}
+.lab-button span { display: inline-block; transition: transform .2s; }
+.encerramento { padding-top: 72px; padding-bottom: 56px; }
+.encerramento h1 { font-size: 96px; }
+.encerramento .lab-button { margin-top: 40px; }
+/* Encerramento: as duas referências principais, cada uma com uma figura da própria obra. */
+.refs { margin-top: 40px; }
+.refs-titulo { margin: 0 0 20px; color: var(--muted); font-size: 22px; font-weight: normal; letter-spacing: .16em; text-transform: uppercase; }
+.refs-lista { display: flex; gap: 48px; }
+.ref {
+  width: 580px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: var(--muted);
+  text-decoration: none;
+}
+.ref-img {
+  width: 100%;
+  height: 300px;
+  margin-bottom: 8px;
+  padding: 14px;
+  display: block;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #fff;
+  transition: border-color .2s, transform .2s;
+}
+.ref-img img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.ref:hover .ref-img { border-color: var(--blue); transform: translateY(-2px); }
+.ref-nome { color: var(--ink); font-size: 26px; line-height: 1.25; font-weight: bold; }
+.ref-autor { font-size: 22px; }
+.slide.active .refs { animation: rise .7s .2s cubic-bezier(.2, .7, .2, 1) both; }
+.lab-button:hover { background: var(--blue); color: var(--bg); }
+.lab-button:hover span { transform: translateX(4px); }
+
+/* Entrada em sequência dos elementos da capa. */
+.slide.active .kicker, .slide.active h1, .slide.active .lede, .slide.active .band, .slide.active .lab-button {
+  animation: rise .7s cubic-bezier(.2, .7, .2, 1) both;
+}
+.slide.active h1 { animation-delay: .08s; }
+.slide.active .lede { animation-delay: .2s; }
+.slide.active .band { animation-delay: .32s; }
+.slide.active .lab-button { animation-delay: .44s; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+
+/* Slides de conteúdo: cabeçalho à esquerda e diagrama abaixo. */
+.slide-head { flex: none; }
+.slide-head .kicker { margin-bottom: 12px; }
+.slide-head h2 { margin: 0; color: var(--ink); font-size: 64px; line-height: 1.1; letter-spacing: -.01em; }
+.diagram { display: block; width: 1360px; height: auto; margin-top: auto; }
+
+/* Etapas: elementos com data-s ficam ocultos até a classe sN do slide. */
+.slide [data-s] {
+  opacity: 0;
+  transition-property: opacity, transform, stroke-dashoffset;
+  transition-duration: calc(.5s / var(--speed));
+  transition-timing-function: cubic-bezier(.2, .7, .2, 1);
+  transition-delay: calc(var(--d, 0) * 1s / var(--speed));
+}
+.slide.s1 [data-s="1"], .slide.s2 [data-s="2"], .slide.s3 [data-s="3"], .slide.s4 [data-s="4"],
+.slide.s5 [data-s="5"], .slide.s6 [data-s="6"], .slide.s7 [data-s="7"], .slide.s8 [data-s="8"] { opacity: 1; transform: none; stroke-dashoffset: 0; }
+.slide.instant :not(.loop), .slide.instant *::before, .slide.instant *::after { transition: none !important; animation: none !important; }
+/* Animações contínuas (.loop) só correm no slide ativo. */
+.slide:not(.active) .loop { animation-play-state: paused !important; }
+
+/* Slide 2: prefill e decode. */
+#prefill-decode { font-family: Arial, sans-serif; }
+/* Estados iniciais com especificidade menor que a regra de etapa visível. */
+[data-s].slide-in { transform: translateX(-40px); }
+[data-s].rise { transform: translateY(12px); }
+[data-s].pop { transform: scaleY(.15); transform-box: fill-box; transform-origin: 50% 100%; }
+[data-s].flow { stroke-dasharray: 1; stroke-dashoffset: 1; }
+#prefill-decode text { text-anchor: middle; }
+#prefill-decode .pass { fill: #ffffff05; stroke: var(--line); stroke-width: 1.5; }
+#prefill-decode .pass-label, #prefill-decode .note, #prefill-decode .axis-label { fill: var(--muted); font-size: 22px; }
+#prefill-decode .axis-label { text-anchor: end; }
+#prefill-decode .model rect { fill: #58c4dd12; stroke: var(--blue); stroke-width: 2.5; }
+#prefill-decode .model text { fill: var(--ink); font-size: 28px; }
+#prefill-decode .chip rect { stroke-width: 2; }
+#prefill-decode .chip text { font-size: 26px; }
+#prefill-decode .prompt rect { fill: #58c4dd14; stroke: var(--blue); }
+#prefill-decode .prompt text { fill: var(--blue); }
+#prefill-decode .generated rect { fill: #f4ce7214; stroke: var(--yellow); }
+#prefill-decode .generated text { fill: var(--yellow); }
+#prefill-decode .join { fill: none; stroke: var(--muted); stroke-width: 2; }
+#prefill-decode .kv { fill: var(--muted); font: italic 26px KaTeX_Math, serif; text-anchor: end; }
+#prefill-decode .cell.new { fill: var(--purple); }
+#prefill-decode .cell.old { fill: var(--purple); fill-opacity: .4; stroke: var(--yellow); stroke-width: 2; }
+#prefill-decode .flow { fill: none; stroke: var(--muted); stroke-width: 2; }
+#prefill-decode .flow.-le { stroke: var(--yellow); stroke-width: 3; }
+#prefill-decode .flow.-grava { stroke: var(--purple-text); stroke-width: 3; }
+#prefill-decode .arrowhead { fill: var(--muted); }
+#prefill-decode .arrowhead-le { fill: var(--yellow); }
+#prefill-decode .arrowhead-grava { fill: var(--purple-text); }
+#prefill-decode .axis { stroke: var(--muted); stroke-width: 2; stroke-opacity: .6; }
+#prefill-decode .phase { font-size: 32px; font-weight: bold; }
+#prefill-decode .phase.prefill { fill: var(--blue); }
+#prefill-decode .phase.decode text { fill: var(--yellow); }
+#prefill-decode .phase.decode path { fill: none; stroke: var(--yellow); stroke-width: 2; stroke-opacity: .7; }
+#prefill-decode .metric { fill: none; stroke-width: 3; }
+#prefill-decode .metric.ttft { stroke: var(--blue); }
+#prefill-decode .metric.tpot { stroke: var(--yellow); }
+#prefill-decode .first-token-label { fill: var(--ink); font-size: 22px; }
+#prefill-decode .metric text { stroke: none; text-anchor: start; font-size: 24px; }
+#prefill-decode .metric-name { font-weight: bold; }
+#prefill-decode .ttft .metric-name { fill: var(--blue); }
+#prefill-decode .tpot .metric-name { fill: var(--yellow); }
+#prefill-decode .metric-definition { fill: var(--muted); }
+#prefill-decode .metric-tick { stroke: var(--muted); stroke-width: 2; }
+#prefill-decode .request-label { fill: var(--muted); font-size: 22px; text-anchor: start; }
+#prefill-decode .tag path { fill: none; stroke-width: 2; }
+#prefill-decode .tag text { font-size: 20px; font-weight: bold; }
+#prefill-decode text.start { text-anchor: start; }
+#prefill-decode text.end { text-anchor: end; }
+#prefill-decode .tag.reused path { stroke: var(--yellow); }
+#prefill-decode .tag.reused text { fill: var(--yellow); }
+#prefill-decode .tag.fresh path { stroke: var(--purple-text); }
+#prefill-decode .tag.fresh text { fill: var(--purple-text); }
+.now2 #prefill-decode .read[data-s="2"], .now3 #prefill-decode .read[data-s="3"] {
+  animation: read calc(.8s / var(--speed)) calc(var(--r) * 1s / var(--speed)) ease-in-out both;
+}
+@keyframes read { 50% { fill: var(--yellow); fill-opacity: 1; } }
+
+/* Slide 3: a GPU como uma fábrica. */
+#fabrica { font-family: Arial, sans-serif; }
+#fabrica text { text-anchor: middle; }
+#fabrica .title { font-size: 32px; font-weight: bold; }
+#fabrica .store .title { fill: var(--purple-text); }
+#fabrica .factory .title { fill: var(--blue); }
+#fabrica .sub, #fabrica .desc { fill: var(--muted); font-size: 22px; }
+#fabrica .measure { fill: var(--ink); font-size: 28px; font-weight: bold; }
+#fabrica .building { fill: #ffffff06; stroke-width: 2.5; stroke-linejoin: round; }
+#fabrica .store .building { stroke: var(--purple-text); }
+#fabrica .factory .building { stroke: var(--blue); }
+#fabrica .shelf { stroke: var(--purple); stroke-opacity: .5; stroke-width: 2; }
+#fabrica .stock { fill: var(--yellow); fill-opacity: .55; }
+#fabrica .core { fill: var(--blue); fill-opacity: .12; stroke: var(--blue); stroke-width: 1.5; }
+#fabrica .asphalt { fill: #ffffff0a; stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#fabrica .lane { stroke: var(--muted); stroke-opacity: .35; stroke-width: 2; stroke-dasharray: 14 12; }
+#fabrica .crate { fill: var(--yellow); transform: translateX(calc(var(--p) * 662px)); }
+#fabrica .bracket, #fabrica .span { fill: none; stroke: var(--ink); stroke-width: 2.5; }
+#fabrica .guide { stroke: var(--muted); stroke-opacity: .5; stroke-width: 1.5; stroke-dasharray: 4 6; }
+#fabrica .gate { stroke: var(--ink); stroke-width: 3; stroke-dasharray: 10 8; }
+#fabrica .arrowhead { fill: var(--ink); }
+/* Caixas e núcleos em movimento a partir da etapa 2. */
+.slide.s2 #fabrica .crate { animation: drive calc(4s / var(--speed)) linear infinite; animation-delay: calc(var(--p) * -4s / var(--speed)); }
+@keyframes drive { from { transform: translateX(0); } to { transform: translateX(662px); } }
+.slide.s2 #fabrica .core { animation: work calc(1.6s / var(--speed)) ease-in-out infinite; }
+@keyframes work { 50% { fill: var(--yellow); fill-opacity: .8; } }
+
+/* Slide 4: limitado pelo cálculo × limitado pela memória. */
+#gargalo { font-family: Arial, sans-serif; }
+#gargalo text { text-anchor: middle; }
+#gargalo .titulo { font-size: 34px; font-weight: bold; }
+#gargalo .titulo.calculo { fill: var(--blue); }
+#gargalo .titulo.memoria { fill: var(--purple-text); }
+#gargalo .termo { fill: var(--muted); font-size: 24px; font-style: italic; }
+#gargalo .building { fill: #ffffff06; stroke-width: 2.5; stroke-linejoin: round; }
+#gargalo .building.store { stroke: var(--purple-text); }
+#gargalo .building.factory { stroke: var(--blue); }
+#gargalo .stock { fill: var(--yellow); fill-opacity: .55; }
+#gargalo .asphalt { fill: #ffffff0a; stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#gargalo .crate { fill: var(--yellow); }
+#gargalo .crate.loop { transform: translateX(calc(var(--p) * var(--dist))); }
+#gargalo .core { fill: var(--blue); fill-opacity: .12; stroke: var(--blue); stroke-width: 1.5; }
+#gargalo .core.ocupada { fill: var(--yellow); fill-opacity: .8; }
+#gargalo .uso { fill: var(--muted); font-size: 24px; }
+#gargalo .uso-trilho { fill: #ffffff10; }
+#gargalo .uso-barra.calculo { fill: var(--yellow); }
+#gargalo .uso-barra.memoria { fill: var(--yellow); fill-opacity: .8; }
+#gargalo .legenda { fill: var(--ink); font-size: 28px; }
+#gargalo .contorno { fill: none; stroke: var(--yellow); stroke-width: 4; stroke-linejoin: round; }
+#gargalo .tag { fill: var(--yellow); font-size: 26px; font-weight: bold; }
+#gargalo .divisoria { stroke: var(--muted); stroke-opacity: .3; stroke-width: 2; stroke-dasharray: 6 8; }
+/* Movimento contínuo depois que cada cenário aparece. */
+.slide.s1 #gargalo .calculo .crate.loop, .slide.s2 #gargalo .memoria .crate.loop {
+  animation: viagem calc(var(--dur) / var(--speed)) linear infinite;
+  animation-delay: calc(var(--p) * var(--dur) * -1 / var(--speed));
+}
+@keyframes viagem { from { transform: translateX(0); } to { transform: translateX(var(--dist)); } }
+.slide.s1 #gargalo .core.ocupada { animation: ocupada calc(1.2s / var(--speed)) ease-in-out infinite; }
+@keyframes ocupada { 50% { fill-opacity: .55; } }
+.slide.s2 #gargalo .core.chegada { animation: chegada calc(4s / var(--speed)) linear infinite; animation-delay: calc(var(--atraso) / var(--speed)); }
+@keyframes chegada { 0%, 14% { fill: var(--yellow); fill-opacity: .85; } 22%, 100% { fill: var(--blue); fill-opacity: .12; } }
+
+/* Slide 5: uma leitura de W, quantos usos. */
+#reuso { font-family: Arial, sans-serif; }
+#reuso text { text-anchor: middle; }
+#reuso .box { fill: #ffffff05; stroke-width: 2.5; }
+#reuso .box.vram { stroke: var(--purple-text); }
+#reuso .box-tag { fill: var(--purple-text); font-size: 24px; font-weight: bold; }
+#reuso .math { font-family: KaTeX_Math, serif; font-style: italic; }
+#reuso .math.big { fill: var(--ink); font-size: 34px; }
+#reuso .math.sub { font-size: 70%; font-style: normal; font-family: KaTeX_Main, serif; }
+#reuso .nota { fill: var(--muted); font-size: 24px; }
+#reuso text.inicio { text-anchor: start; }
+#reuso text.fim { text-anchor: end; }
+#reuso .peso { fill: var(--purple); fill-opacity: .55; stroke: var(--purple-text); stroke-width: 1.5; }
+#reuso .peso.w11 { fill: var(--yellow); fill-opacity: .9; stroke: var(--yellow); }
+#reuso .token { fill: var(--blue); fill-opacity: .14; stroke: var(--blue); stroke-width: 1.5; }
+#reuso .token.alvo { fill-opacity: .5; stroke: var(--yellow); }
+#reuso .op { fill: var(--muted); font-size: 38px; }
+#reuso .leitura { fill: none; stroke: var(--muted); stroke-width: 3; }
+#reuso .arrowhead { fill: var(--muted); }
+#reuso .bytes { fill: var(--ink); font-size: 24px; font-weight: bold; }
+#reuso .titulo { font-size: 30px; font-weight: bold; }
+#reuso .titulo.decode { fill: var(--ink); }
+#reuso .titulo.prefill { fill: var(--yellow); }
+#reuso .uso { fill: none; stroke: var(--yellow); stroke-width: 2.5; }
+[data-s].uso { stroke-dasharray: 1; stroke-dashoffset: 1; }
+#reuso .contagem { fill: var(--ink); font-size: 28px; }
+#reuso .contagem .destaque { fill: var(--yellow); font-weight: bold; }
+#reuso .gargalo { font-size: 26px; font-weight: bold; }
+#reuso .gargalo.memoria { fill: var(--purple-text); }
+#reuso .gargalo.calculo { fill: var(--blue); }
+#reuso .fecho { fill: var(--ink); font-size: 30px; font-weight: bold; }
+
+/* Slide 6: intensidade aritmética. Definição em cima; matriz e contas distribuídas pela altura. */
+.intensidade { flex: 1; margin-top: 16px; display: flex; flex-direction: column; justify-content: space-evenly; }
+.intensidade .def { text-align: center; }
+.intensidade .def .katex-display { margin: 0; font-size: 40px; color: var(--ink); }
+.intensidade .escala { margin: 12px 0 0; display: flex; justify-content: center; gap: 56px; font-size: 26px; }
+.intensidade .escala .memoria { color: var(--purple-text); }
+.intensidade .escala .calculo { color: var(--blue); }
+.intensidade .linha { display: grid; grid-template-columns: 640px 1fr; gap: 48px; align-items: center; }
+.intensidade #peso-fp16 { width: 640px; height: auto; }
+.intensidade .contas { display: grid; gap: 36px; }
+.intensidade .conta { padding: 16px 28px; border: 1.5px solid var(--line); border-radius: 14px; }
+.intensidade .conta.decode { border-color: var(--purple-text); }
+.intensidade .conta.prefill { border-color: var(--blue); }
+.intensidade .conta .rotulo { margin: 0 0 6px; color: var(--muted); font-size: 26px; }
+.intensidade .conta .katex { font-size: 38px; color: var(--ink); }
+.intensidade .conta .rotulo .katex { font-size: 28px; color: var(--muted); }
+#peso-fp16 { font-family: Arial, sans-serif; overflow: visible; }
+#peso-fp16 text { text-anchor: middle; }
+#peso-fp16 .inicio { text-anchor: start; }
+#peso-fp16 .fim { text-anchor: end; }
+#peso-fp16 .math { font-family: KaTeX_Math, serif; font-style: italic; }
+#peso-fp16 .math.sub { font-size: 70%; font-style: normal; font-family: KaTeX_Main, serif; }
+#peso-fp16 .math.grande { fill: var(--ink); font-size: 40px; }
+#peso-fp16 .peso { fill: var(--purple); fill-opacity: .55; stroke: var(--purple-text); stroke-width: 1.5; }
+#peso-fp16 .peso.w11 { fill: var(--yellow); fill-opacity: .9; stroke: var(--yellow); }
+#peso-fp16 .rotulo-peso { fill: var(--yellow); font-size: 24px; font-weight: bold; text-anchor: start; }
+#peso-fp16 .seta { fill: none; stroke: var(--muted); stroke-width: 3; }
+#peso-fp16 .arrowhead { fill: var(--muted); }
+#peso-fp16 .op { fill: var(--ink); font-size: 26px; }
+#peso-fp16 .traco { stroke: var(--muted); stroke-width: 2; }
+#peso-fp16 .total { fill: var(--yellow); font-size: 34px; font-weight: bold; }
+
+/* Slide 7: Tabela 1 de LLM Inference Unveiled (Llama-2-7B na A6000), prefill e decode lado a lado. */
+.tabela-a6000 { position: relative; flex: 1; margin-top: 16px; margin-bottom: 8px; display: flex; flex-direction: column; justify-content: center; gap: 12px; }
+.tabela-a6000 .faixa { display: flex; align-items: center; gap: 28px; }
+.tabela-a6000 .faixa .cenario { margin-right: auto; }
+.tabela-a6000 .spec { margin: 0; display: flex; align-items: baseline; gap: 10px; padding-left: 28px; border-left: 1px solid var(--line); }
+.tabela-a6000 .spec-rot { color: var(--muted); font-size: 22px; }
+.tabela-a6000 .spec .katex { color: var(--ink); font-size: 28px; }
+.tabela-a6000 .cenario { margin: 0; color: var(--ink); font-size: 26px; }
+.tabela-a6000 .gpu { margin: 0; display: flex; align-items: center; gap: 14px; color: var(--ink); font-size: 26px; font-weight: bold; }
+/* Logo oficial sem alteração: o enquadramento recorta a área vazia do arquivo (viewBox 2560 × 1440;
+   marca em 215, 523, 2070 × 394) e a área clara preserva o respiro. */
+.tabela-a6000 .logo { --h: 28px; --k: calc(var(--h) / 394); display: block; padding: 9px 14px; border-radius: 8px; background: #fff; }
+.tabela-a6000 .recorte { display: block; width: calc(2070 * var(--k)); height: var(--h); overflow: hidden; }
+.tabela-a6000 .recorte img { display: block; max-width: none; width: calc(2560 * var(--k)); height: calc(1440 * var(--k)); margin: calc(-523 * var(--k)) 0 0 calc(-215 * var(--k)); }
+.ops { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.ops .c-op { width: 268px; }
+.ops .c-sep { width: 28px; }
+.ops th, .ops td { padding: 4px 10px; color: var(--ink); font-size: 24px; text-align: right; white-space: nowrap; vertical-align: middle; }
+.ops .sep { padding: 0; border: 0 !important; background: none !important; }
+.ops thead .fase { padding-bottom: 6px; border-bottom: 2px solid var(--muted); font-size: 28px; text-align: center; }
+.ops thead .op-h { vertical-align: bottom; text-align: left; }
+.ops thead .op-h, .ops thead .cols th { color: var(--muted); font-size: 20px; font-weight: normal; }
+.ops thead .cols th { padding-top: 6px; vertical-align: bottom; line-height: 1.25; }
+.ops .un { display: block; }
+.ops .un .katex { font-size: 20px; }
+.ops tbody th { text-align: left; font-weight: normal; line-height: 1.3; }
+.ops tbody th code { font-family: ui-monospace, "DejaVu Sans Mono", monospace; font-size: 21px; }
+.ops tbody th .katex { font-size: 27px; }
+.ops tbody tr { border-top: 1px solid var(--line); }
+.ops tbody tr.outra:first-of-type, .ops tbody tr.proj + tr.outra { border-top: 2px solid var(--muted); border-top-color: #b4b6c466; }
+/* Coluna de intensidade em destaque. */
+.ops .int { background: #ffffff0a; }
+.ops td.int { font-weight: bold; }
+.ops td.int.calculo { color: var(--blue); }
+.ops td.int.memoria { color: var(--purple-text); }
+.ops .tag { display: inline-block; min-width: 112px; padding: 2px 12px; border: 1.5px solid currentColor; border-radius: 999px; font-size: 21px; text-align: center; }
+.ops .tag.calculo { color: var(--blue); }
+.ops .tag.memoria { color: var(--purple-text); }
+.ops tr, .ops th, .ops td, .ops .tag { transition: opacity calc(.45s / var(--speed)), background-color calc(.45s / var(--speed)), color calc(.45s / var(--speed)), border-color calc(.45s / var(--speed)); }
+/* Etapa 1: projeções em destaque, demais esmaecidas. Etapa 2: o inverso (memória nas duas fases).
+   Etapa 3: tudo em destaque. */
+.slide.s1:not(.s2) .ops tr.outra, .slide.s2:not(.s3) .ops tr.proj { opacity: .3; }
+.slide.s1:not(.s2) .ops tr.proj th, .slide.s3 .ops tr.proj th { color: var(--yellow); }
+.slide.s1:not(.s2) .ops tr.proj td.int.calculo, .slide.s3 .ops tr.proj td.int.calculo { background: #58c4dd2e; }
+.slide.s1:not(.s2) .ops tr.proj td.int.memoria, .slide.s3 .ops tr.proj td.int.memoria,
+.slide.s2 .ops tr.outra td.int { background: #9a72d838; }
+.slide.s1:not(.s2) .ops tr.proj .tag.calculo, .slide.s3 .ops tr.proj .tag.calculo { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+.slide.s1:not(.s2) .ops tr.proj .tag.memoria, .slide.s3 .ops tr.proj .tag.memoria,
+.slide.s2 .ops tr.outra .tag { background: var(--purple); border-color: var(--purple); color: #fff; }
+.tabela-a6000 .rodape-tab { display: flex; justify-content: space-between; align-items: flex-start; }
+.tabela-a6000 .nota { margin: 0; color: var(--muted); font-size: 22px; }
+/* Etapa 3: conta do teto, ligada por uma seta ao último teto do decode (adição). */
+.tabela-a6000 .nota { white-space: nowrap; }
+.tabela-a6000 .conta-teto { margin-right: 290px; padding: 8px 26px 10px; display: grid; gap: 4px; border: 1.5px solid var(--yellow); border-radius: 14px; }
+.tabela-a6000 .conta-teto .katex { color: var(--ink); font-size: 28px; white-space: nowrap; }
+.marca-teto { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; pointer-events: none; }
+.marca-teto ellipse { fill: none; stroke: var(--yellow); stroke-width: 2.5; stroke-dasharray: 7 6; }
+.marca-teto .seta { fill: none; stroke: var(--yellow); stroke-width: 2.5; }
+.marca-teto marker path { fill: var(--yellow); stroke: none; }
+
+/* Slide 8: Roofline. */
+#teto { font-family: Arial, sans-serif; }
+#teto text { text-anchor: middle; }
+#teto .inicio { text-anchor: start; }
+#teto .fim { text-anchor: end; }
+#teto .grade { stroke: var(--muted); stroke-opacity: .14; stroke-width: 1; }
+#teto .eixo { fill: none; stroke: var(--muted); stroke-width: 2; }
+#teto .marca { fill: var(--muted); font-size: 22px; }
+#teto .marca.y { text-anchor: end; }
+#teto .titulo-eixo { fill: var(--ink); font-size: 24px; font-weight: bold; }
+#teto .math { font-family: KaTeX_Math, serif; font-style: italic; font-weight: normal; font-size: 28px; }
+#teto .linha { fill: none; stroke-width: 6; stroke-linecap: round; }
+#teto .linha.banda { stroke: var(--purple-text); }
+#teto .linha.pico { stroke: var(--blue); }
+[data-s].desenho { stroke-dasharray: 1; stroke-dashoffset: 1; }
+/* Na etapa 2, o trecho da diagonal acima do teto deixa de valer. */
+.slide.s2 #teto .linha.banda.acima { stroke-opacity: .25; stroke-width: 3; transition-delay: 0s; }
+#teto .rotulo { font-size: 24px; font-weight: bold; }
+#teto .rotulo.banda { fill: var(--purple-text); }
+#teto .rotulo.pico { fill: var(--blue); }
+#teto .transicao { stroke: var(--ink); stroke-opacity: .6; stroke-width: 2; stroke-dasharray: 6 7; }
+#teto .rotulo-transicao { fill: var(--ink); font-size: 24px; font-weight: bold; }
+#teto .rotulo-transicao.detalhe { fill: var(--muted); font-size: 22px; font-weight: normal; }
+#teto .regiao.memoria { fill: var(--purple); fill-opacity: .12; }
+#teto .regiao.calculo { fill: var(--blue); fill-opacity: .08; }
+#teto .rotulo-regiao { font-size: 26px; font-weight: bold; }
+#teto .rotulo-regiao.memoria { fill: var(--purple-text); }
+#teto .rotulo-regiao.calculo { fill: var(--blue); }
+#teto .ponto { fill: var(--yellow); stroke: var(--bg); stroke-width: 3; }
+#teto .guia { stroke: var(--yellow); stroke-width: 2; stroke-dasharray: 4 5; }
+#teto .rotulo-op { fill: var(--yellow); font-size: 26px; font-weight: bold; }
+#teto .rotulo-op.detalhe { fill: var(--ink); font-size: 22px; font-weight: normal; }
+
+/* Slide 9: bytes por token. */
+#bytes-token { font-family: Arial, sans-serif; }
+#bytes-token text { text-anchor: middle; }
+#bytes-token .inicio { text-anchor: start; }
+#bytes-token .fim { text-anchor: end; }
+#bytes-token .nome { fill: var(--ink); font-size: 28px; font-weight: bold; }
+#bytes-token .valor { fill: var(--ink); font-size: 32px; font-weight: bold; }
+#bytes-token .valor.kv { fill: var(--blue); font-size: 28px; }
+#bytes-token .detalhe { fill: var(--muted); font-size: 24px; }
+#bytes-token .detalhe.emb { fill: var(--purple-text); }
+#bytes-token .seg.pesos { fill: var(--purple); }
+#bytes-token .seg.kv { fill: var(--blue); }
+#bytes-token .seg.emb { fill: url(#hachura-bytes); stroke: var(--purple-text); stroke-width: 2; }
+#bytes-token .hachura-fundo { fill: var(--bg); fill-opacity: .55; }
+#bytes-token .hachura-linha { stroke: var(--purple-text); stroke-width: 3; }
+#bytes-token .dentro { fill: var(--bg); font-size: 28px; font-weight: bold; }  /* texto escuro sobre o roxo */
+#bytes-token .guia { stroke: var(--purple-text); stroke-width: 2; stroke-dasharray: 5 6; }
+#bytes-token .colchete { fill: none; stroke: var(--yellow); stroke-width: 3; }
+#bytes-token .total { fill: var(--yellow); font-size: 44px; font-weight: bold; }
+[data-s].cresce { transform: scaleX(0); transform-box: fill-box; transform-origin: 0 50%; }
+
+/* Slide 9: o que define os tokens/s. */
+.teto-final { margin-top: 52px; display: grid; gap: 44px; justify-items: center; }
+.teto-final .eq .katex-display { margin: 0; color: var(--ink); }
+.teto-final .eq.geral .katex-display { font-size: 30px; }
+.teto-final .eq-linha { display: flex; align-items: center; justify-content: center; gap: 40px; }
+.teto-final .eq.dimensional { padding-left: 40px; border-left: 1.5px solid var(--line); }
+.teto-final .eq.dimensional .katex-display { font-size: 22px; color: var(--muted); }
+.teto-final .eq.numeros { text-align: center; }
+.teto-final .eq.numeros .katex-display { font-size: 40px; color: var(--yellow); }
+.teto-final .cartoes { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 10px; }
+.teto-final .cartao { padding: 20px 28px; border: 1.5px solid var(--line); border-radius: 16px; background: #ffffff04; }
+.teto-final .cartao.resposta { border-color: var(--purple-text); }
+.teto-final .cartao.alavancas { border-color: var(--blue); }
+.teto-final .rotulo { margin: 0 0 10px; color: var(--ink); font-size: 26px; font-weight: bold; }
+.teto-final .texto { margin: 0; color: var(--ink); font-size: 28px; line-height: 1.4; }
+.teto-final .texto strong { color: var(--yellow); }
+.teto-final table { width: 100%; border-collapse: collapse; font-size: 24px; font-variant-numeric: tabular-nums; }
+.teto-final th, .teto-final td { padding: 4px 10px; border-bottom: 1px solid var(--line); text-align: right; }
+.teto-final thead th { color: var(--muted); font-size: 20px; font-weight: normal; }
+.teto-final thead th:first-child { text-align: left; }
+.teto-final tbody th { color: var(--ink); text-align: left; font-weight: normal; }
+.teto-final td { color: var(--ink); }
+.teto-final tr.ganho td:last-child { color: var(--blue); font-weight: bold; }
+
+/* Slide 10: qual modelo cabe? */
+#cabe { font-family: Arial, sans-serif; }
+#cabe text { text-anchor: middle; }
+#cabe .inicio { text-anchor: start; }
+#cabe .nome { fill: var(--ink); font-size: 28px; font-weight: bold; }
+#cabe .sub, #cabe .legenda, #cabe .nota { fill: var(--muted); font-size: 22px; }
+#cabe .sub .cap { fill: var(--ink); font-weight: bold; }
+#cabe .chao { stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#cabe .predio { fill: #ffffff06; stroke: var(--purple-text); stroke-width: 2.5; stroke-linejoin: round; }
+#cabe .prateleira { stroke: var(--purple); stroke-opacity: .5; stroke-width: 2; }
+#cabe .vaga { fill: none; stroke: var(--muted); stroke-opacity: .35; stroke-width: 1.5; stroke-dasharray: 4 4; }
+#cabe .caixa { fill: var(--purple); }
+#cabe .status { fill: var(--ink); font-size: 26px; font-weight: bold; }
+#cabe .ok { fill: var(--blue); }
+#cabe .nao, #cabe .falta { fill: var(--red); }
+#cabe .falta { font-size: 22px; font-weight: bold; }
+#cabe .excesso { fill: #fc625510; stroke: var(--red); stroke-width: 2.5; stroke-dasharray: 8 6; }
+#cabe .cartao { fill: #ffffff04; stroke: var(--red); stroke-width: 1.5; }
+#cabe .cartao-titulo { fill: var(--ink); font-size: 24px; font-weight: bold; }
+#cabe .item { fill: var(--ink); font-size: 24px; }
+/* A caixa de KV cache da carga de 16 GB desliza para a vaga que ocupa na carga de 64 GB. */
+.slide.s3 #cabe .ate2 { opacity: 0; }
+
+/* Slide 11: quanto tempo para ler? */
+#ler { font-family: Arial, sans-serif; }
+#ler text { text-anchor: middle; }
+#ler .inicio { text-anchor: start; }
+#ler .nome { fill: var(--ink); font-size: 28px; font-weight: bold; }
+#ler .sub, #ler .legenda { fill: var(--muted); font-size: 22px; }
+#ler .forte { fill: var(--ink); font-weight: bold; }
+#ler .chao { stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#ler .predio { fill: #ffffff06; stroke: var(--purple-text); stroke-width: 2.5; stroke-linejoin: round; }
+#ler .prateleira { stroke: var(--purple); stroke-opacity: .5; stroke-width: 2; }
+#ler .vaga { fill: none; stroke: var(--muted); stroke-opacity: .35; stroke-width: 1.5; stroke-dasharray: 4 4; }
+#ler .caixa { fill: var(--purple); }
+#ler .canal { fill: #ffffff0a; stroke: var(--muted); stroke-opacity: .5; stroke-width: 1.5; }
+#ler .dado { fill: var(--yellow); fill-opacity: .75; transform: translateX(calc(var(--p) * var(--L))); }
+.slide.s2 #ler .dado { animation: fluir calc(3s / var(--speed)) linear infinite; animation-delay: calc(var(--p) * -3s / var(--speed)); }
+@keyframes fluir { from { transform: translateX(0); } to { transform: translateX(var(--L)); } }
+#ler .banda { fill: var(--ink); font-size: 26px; font-weight: bold; }
+#ler .gpu { fill: #58c4dd12; stroke: var(--blue); stroke-width: 2.5; }
+#ler .gpu-rotulo { fill: var(--blue); font-size: 24px; font-weight: bold; }
+#ler .tempo { fill: var(--yellow); }
+#ler [data-s].tempo { transition-duration: .2s, calc(var(--t) * 1s / var(--speed)); transition-timing-function: linear; }
+#ler .tempo-rotulo { fill: var(--yellow); font-size: 26px; font-weight: bold; }
+#ler .eq { color: var(--ink); font-size: 28px; line-height: 1; white-space: nowrap; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+/* Impressão/PDF: um slide por página 16:9, com o quadro estático no lugar do vídeo. */
+@page { size: 1600px 900px; margin: 0; }
+@media print {
+  *, *::before, *::after { animation: none !important; transition: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  header, .empty-state, .toolbar, .index-panel { display: none; }
+  .deck { overflow: visible; height: auto; }
+  .viewport, .stage-frame, .stage { position: static; transform: none !important; width: auto !important; height: auto !important; }
+  .slide { position: relative; width: 1600px; height: 900px; opacity: 1; visibility: visible; break-after: page; }
+  .slide video { display: none; }
+  .print-only { display: block !important; }
+  .slide [data-s] { opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; }
+  #cabe .ate2 { display: none; }
+  .ops tr.proj th { color: var(--yellow); }
+  .ops tr.proj td.int.calculo { background: #58c4dd2e; }
+  .ops tr.proj td.int.memoria, .ops tr.outra td.int { background: #9a72d838; }
+  .ops tr.proj .tag.calculo { background: var(--blue); border-color: var(--blue); color: var(--bg); }
+  .ops tr.proj .tag.memoria, .ops tr.outra .tag { background: var(--purple); border-color: var(--purple); color: #fff; }
+}
