@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101117">
+  <title>Pruning não estruturado · Apresentação</title>
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="style.css?v=83">
+</head>
+<body class="deck">
+  <nav class="toolbar" aria-label="Controles da apresentação">
+    <button class="icon-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="indice" aria-label="Abrir índice">
+      <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+    <div class="toolbar-group">
+      <span class="step-dots" id="step-dots" aria-hidden="true"></span>
+      <button class="icon-button" id="print-pdf" type="button" aria-label="Gerar PDF" title="Gerar PDF">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>
+      </button>
+      <button class="icon-button" id="zoom-out" type="button" aria-label="Diminuir zoom">−</button>
+      <button class="icon-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+    </div>
+  </nav>
+
+  <aside class="index-panel" id="indice" aria-label="Índice" hidden>
+    <p class="index-title">Índice</p>
+    <ol id="index-list"></ol>
+    <a class="index-lab" href="laboratorio/index.html?v=6">Laboratório →</a>
+  </aside>
+
+  <div class="viewport" id="viewport">
+    <div class="stage-frame" id="stage-frame">
+      <main class="stage" id="stage" aria-label="Apresentação" data-total="13">
+
+        <section class="slide cover" id="slide-0" data-num="0" data-title="Pruning não estruturado">
+          <h1>Pruning <span class="hl">não estruturado</span></h1>
+          <p class="lede">Por que zerar <strong>50%</strong> dos pesos quase nunca dá <em>2×</em> de velocidade?</p>
+          <figure class="band">
+            <svg id="rede-poda" viewBox="0 0 1360 400" role="img" aria-label="Animação: uma rede neural densa perde primeiro as conexões de menor magnitude, até restar metade delas; os neurônios continuam no lugar."></svg>
+          </figure>
+          <a class="lab-button" href="laboratorio/index.html?v=6">Ir para o laboratório <span aria-hidden="true">→</span></a>
+        </section>
+        <section class="slide content" id="slide-1" data-num="1" data-title="O que é Pruning?" data-steps="3">
+          <header class="slide-head"><h2>O que é Pruning?</h2></header>
+          <svg class="diagram" id="poda-quant" viewBox="0 0 1360 640" role="img" aria-label="A matriz de pesos W, 4 por 4, segue por dois caminhos. Pruning: os 8 pesos de menor magnitude viram zero e os outros ficam iguais, ou seja, menos pesos. Quantização: todos os 16 pesos continuam, arredondados para menos casas, ou seja, menos bits por peso."></svg>
+        </section>
+        <section class="slide content" id="slide-2" data-num="2" data-title="O que é Esparsidade?" data-steps="4">
+          <header class="slide-head"><h2>O que é Esparsidade?</h2></header>
+          <div class="esp-corpo">
+            <svg id="esp-matriz" viewBox="0 0 516 516" role="img" aria-label="A matriz W, 4 por 4, perde primeiro 4 e depois mais 4 pesos de menor magnitude, que viram zero. A esparsidade pode ser medida por camada ou no modelo inteiro (global). A esparsidade s, número de zeros dividido pelo total de pesos, passa de 0 de 16 para 4 de 16, 25%, e depois 8 de 16, 50%."></svg>
+            <div class="esp-formula"><div id="esp-conta" aria-hidden="true"></div><p class="esp-nota" data-s="4">medida <strong>por camada</strong> ou <strong>global</strong> (modelo inteiro)</p></div>
+          </div>
+        </section>
+
+        <section class="slide content" id="slide-3" data-num="3" data-title="Padrões de Esparsidade" data-steps="3">
+          <header class="slide-head"><h2>Padrões de Esparsidade</h2></header>
+          <svg class="diagram" id="padroes" viewBox="0 0 1360 640" role="img" aria-label="A mesma matriz 8 por 8 com 50% de esparsidade em três padrões. Não estruturado, zeros em qualquer posição: no exemplo, os 32 pesos de menor magnitude. Estruturado, remove estruturas inteiras: no exemplo, as 4 linhas de menor norma. N:M, mantém N (no máximo) de cada M pesos seguidos: no exemplo 2:4, em cada grupo de 4 pesos consecutivos de uma linha, os 2 menores viram zero."></svg>
+        </section>
+        <section class="slide content" id="slide-4" data-num="4" data-title="Magnitude: Removendo os Menores Pesos" data-steps="4">
+          <header class="slide-head"><h2>Magnitude: Removendo os Menores Pesos</h2></header>
+          <svg class="diagram" id="magnitude" viewBox="0 0 1360 640" role="img" aria-label="Os 16 pesos da matriz W saem das suas posições e formam barras de altura |w|, em ordem crescente. Um limiar tau separa os 8 menores, que viram zero na matriz e nas barras: 50% de esparsidade. Por fim, um dos pesos removidos é destacado com a pergunta: o peso é pequeno, mas e se a entrada x for grande?"></svg>
+        </section>
+        <section class="slide content" id="slide-5" data-num="5" data-title="Wanda: Pesos e Ativações" data-steps="5">
+          <header class="slide-head"><h2>Wanda: Pesos e Ativações</h2></header>
+          <svg class="diagram" id="wanda" viewBox="0 50 1360 640" role="img" aria-label="Duas entradas, x1 e x2, ligadas à saída y. O peso w1 vale 0,8 e o peso w2 vale 0,1. As ativações são x1 = 0,5 e x2 = 20. As contribuições são w1 x1 = 0,4 e w2 x2 = 2,0: a conexão de peso pequeno contribui cinco vezes mais. A poda por magnitude, que olha só |w|, removeria w2 e perderia 2,0; o Wanda, que olha |w| vezes |x|, remove w1 e perde 0,4."></svg>
+        </section>
+        <section class="slide content" id="slide-6" data-num="6" data-title="Como Funciona o Wanda?" data-steps="4">
+          <header class="slide-head"><h2>Como Funciona o Wanda?</h2></header>
+          <svg class="diagram" id="wanda-eq" viewBox="0 0 1360 640" role="img" aria-label="A equação de importância do Wanda: S i j é igual ao valor absoluto de W i j vezes a norma 2 de X j. Ilustração: uma rede com duas entradas, x1 e x2, e uma saída i. Pesos: W i1 = 0,8 e W i2 = menos 0,3. Ativações de calibração em 4 tokens: entrada 1, 0,5; menos 0,5; 0,5; 0,5, norma 1; entrada 2, 2; menos 4; 1; 2, norma 5. Scores: S i1 = 0,8 vezes 1 = 0,8; S i2 = 0,3 vezes 5 = 1,5. Na saída i, o menor score vira zero: sai W i1, apesar de ser o maior peso."></svg>
+        </section>
+        <section class="slide content" id="slide-7" data-num="7" data-title="Como o Wanda é aplicado a um LLM?" data-steps="4">
+          <header class="slide-head"><h2>Como o Wanda é aplicado a um LLM?</h2></header>
+          <svg class="diagram" id="wanda-llm" viewBox="0 0 1360 640" role="img" aria-label="Quatro etapas, ao lado de quatro camadas do modelo em sequência. 1, calibração: exemplos passam pelo modelo e as ativações de entrada da camada 1 são medidas. 2, importância: a camada 1 calcula S igual ao valor absoluto do peso vezes a norma da ativação. 3, seleção: em cada linha, isto é, para cada saída, os menores S viram zero. 4, próximas camadas: as ativações passam pela camada 1 já podada e a camada 2 repete o processo; depois as camadas 3 e 4."></svg>
+        </section>
+
+        <section class="slide content" id="slide-8" data-num="8" data-title="SparseGPT: Compensando a Remoção dos Pesos" data-steps="4">
+          <header class="slide-head"><h2>SparseGPT: Compensando a Remoção dos Pesos</h2></header>
+          <svg class="diagram" id="sparsegpt" viewBox="0 0 1360 640" role="img" aria-label="Uma linha de pesos w = 0,82; −0,07; 0,31; −1,24 e a sua saída em 6 tokens de calibração, desenhada como uma faixa cinza por token: o alvo. Removendo os dois menores pesos, a barra vermelha de cada token se afasta da faixa: erro 0,55. O SparseGPT ajusta os pesos restantes para 1,18 e −0,98, e a barra verde quase preenche a faixa de cada token: erro 0,02."></svg>
+        </section>
+        <section class="slide content" id="slide-9" data-num="9" data-title="Como Funciona o SparseGPT?" data-steps="4">
+          <header class="slide-head"><h2>Como Funciona o SparseGPT?</h2></header>
+          <svg class="diagram" id="sparsegpt-alg" viewBox="0 0 1360 640" role="img" aria-label="O algoritmo do SparseGPT em quatro etapas, ao lado de uma matriz de pesos W com 6 linhas e 8 colunas. 1, calibração: as ativações de entrada X da camada, um canal de X para cada coluna de W. 2, segunda ordem: H igual a X X transposta e a sua inversa; a diagonal da inversa aparece alinhada às colunas. 3, seleção: o erro de remover o peso w m é epsilon m igual a w m ao quadrado sobre o elemento m m da inversa de H; no primeiro bloco de 4 colunas, metade dos pesos, os de menor erro, é marcada. 4, compensação: as colunas são processadas da esquerda para a direita; cada peso marcado vira zero e os pesos à sua direita, na mesma linha, são ajustados por delta m igual a menos w m sobre o elemento m m da inversa de H, vezes a coluna m da inversa; ao chegar ao segundo bloco, a sua máscara é escolhida com os pesos já ajustados. Depois, o processo se repete na próxima camada."></svg>
+        </section>
+        <section class="slide content" id="slide-10" data-num="10" data-title="Wanda++: Gradientes Regionais" data-steps="4">
+          <header class="slide-head"><h2>Wanda++: Gradientes Regionais</h2></header>
+          <svg class="diagram" id="wandapp" viewBox="0 0 1360 640" role="img" aria-label="Um bloco decodificador, com atenção e MLP. 1: o bloco recebe X e produz f de X. 2: uma perda regional, L RGS, a norma da saída do bloco, é propagada para trás só dentro do bloco, dando o gradiente regional G, calculado só dentro do bloco; G i j é o valor absoluto da derivada de L RGS em relação a W i j; a pontuação RGS é S igual a alfa G mais a norma de X, vezes o valor absoluto de W. 3: os pesos de menor pontuação são removidos. 4: otimização regional: L RO é a norma ao quadrado da diferença entre f de X, a saída do bloco denso, e f til de X, a saída do bloco podado; ela ajuda a ajustar os pesos após a poda. O ciclo: poda pela RGS, retropropagação de L RO e um otimizador ajusta os pesos; o ciclo se repete algumas vezes."></svg>
+        </section>
+
+        <section class="slide content" id="slide-11" data-num="11" data-title="50% de Pesos Zerados = 50% Menos Trabalho?" data-steps="4">
+          <header class="slide-head"><h2>50% de Pesos Zerados = 50% Menos Trabalho?</h2></header>
+          <svg class="diagram" id="armazenamento" viewBox="0 0 1360 640" role="img" aria-label="A matriz W, 4 por 4; os 8 pesos de menor magnitude viram zero, 50% de esparsidade. Armazenamento: o formato denso guarda tudo, até os zeros, 16 números; o formato esparso guarda só os 8 valores não nulos e a posição de cada um, linha e coluna, 8 mais 8 números: a memória não diminui. Multiplicação de W por x com kernel denso: 16 multiplicações, uma por peso, das quais 8 são por zero. Com kernel esparso: só 8 multiplicações, uma por peso não nulo, mas cada uma precisa ler a posição para buscar o x j certo."></svg>
+        </section>
+
+        <section class="slide content" id="slide-12" data-num="12" data-title="Por Que 50% de Esparsidade Não Garante 2× de Velocidade?" data-steps="4">
+          <header class="slide-head"><h2 class="longo">Por Que 50% de Esparsidade Não Garante 2× de Velocidade?</h2></header>
+          <svg class="diagram" id="velocidade" viewBox="0 0 1360 640" role="img" aria-label="Barras de tempo relativas ao kernel denso, com o ideal de 2 vezes marcado na metade. Kernel denso: processa também os zeros, 1 vez. Kernel esparso genérico: metade das contas, mais a leitura das posições e o acesso irregular à memória; tão ou mais lento que o denso. 2:4 com Sparse Tensor Cores: cerca de 1,6 vezes, não 2. Lei de Amdahl no LLM inteiro: multiplicações pelas matrizes de pesos das camadas lineares da atenção e do MLP podem aproveitar os zeros com kernels adequados. Atenção entre tokens, normalizações, ativações e amostragem não usam essas matrizes podadas e não ganham diretamente com essa otimização. Antes, 60% do tempo em operações aceleráveis e 40% no resto; depois, os 60% ficam 2 vezes mais rápidos, viram 30%, e o total cai para 70%: 1 dividido por 0,7, cerca de 1,43 vezes. Medido no LLaMA-7B com 2:4, ponta a ponta: 1,24 vezes."></svg>
+        </section>
+
+        <section class="slide cover encerramento" id="slide-13" data-num="13" data-title="Encerramento">
+          <h1>Obrigado!</h1>
+          <section class="refs" aria-labelledby="refs-titulo">
+            <h2 class="refs-titulo" id="refs-titulo">Referências principais</h2>
+            <div class="refs-lista">
+              <a class="ref" href="https://arxiv.org/abs/2306.11695">
+                <span class="ref-img"><img src="assets/wanda-figura1.png?v=1" alt="Figura 1 do artigo: poda por magnitude, com S = |W| comparado por camada, ao lado do Wanda, com S = |W| vezes a norma de X comparado por saída."></span>
+                <span class="ref-nome">A Simple and Effective Pruning Approach for Large Language Models (Wanda)</span>
+                <span class="ref-autor">Sun et al., ICLR 2024</span>
+              </a>
+              <a class="ref" href="https://arxiv.org/abs/2301.00774">
+                <span class="ref-img"><img src="assets/sparsegpt-figura4.png?v=1" alt="Figura 4 do artigo: algoritmo de reconstrução do SparseGPT, que poda coluna a coluna com uma sequência de inversas da Hessiana e atualiza os pesos à direita."></span>
+                <span class="ref-nome">SparseGPT: Massive Language Models Can Be Accurately Pruned in One-Shot</span>
+                <span class="ref-autor">Frantar e Alistarh, ICML 2023</span>
+              </a>
+              <a class="ref" href="https://yifan-yang.net/wandapp.github.io/">
+                <span class="ref-img"><img src="assets/wandapp-figura2.png?v=1" alt="Figura 2 do artigo: Wanda++, com o gradiente regional G de cada bloco decodificador, poda por RGS e otimização regional entre as saídas densa e podada."></span>
+                <span class="ref-nome">Wanda++: Pruning Large Language Models via Regional Gradients</span>
+                <span class="ref-autor">Yang et al., Findings of ACL 2025</span>
+              </a>
+            </div>
+          </section>
+          <a class="lab-button" href="laboratorio/index.html?v=6">Ir para o laboratório <span aria-hidden="true">→</span></a>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <script src="vendor/katex/katex.min.js"></script>
+  <script>
+  // Fórmulas com o KaTeX local: data-tex="…" (e data-display para bloco).
+  document.querySelectorAll('[data-tex]').forEach(el => {
+    if (window.katex) katex.render(el.dataset.tex, el, { displayMode: el.hasAttribute('data-display'), throwOnError: false });
+    else el.textContent = el.dataset.tex;
+  });
+  </script>
+  <script>
+  // Capa: poda por magnitude. As conexões saem da menor para a maior |w| até restar metade.
+  // Movimento reduzido e impressão mostram o quadro final (50% podado).
+  (() => {
+    const svg = document.getElementById('rede-poda');
+    const NS = 'http://www.w3.org/2000/svg';
+    const CAMADAS = 8, NEURONIOS = 8, W = 1360, H = 400, MX = 40, MY = 28;
+    const PODA = 4.5, FLASH = 0.45, ESPERA = 0.6, MANTEM = 3.2, VOLTA = 1.2;
+    const SPEED = 1.25, CICLO = (ESPERA + PODA + FLASH + MANTEM + VOLTA) / SPEED;
+    let semente = 8;
+    const aleatorio = () => (semente = semente * 16807 % 2147483647) / 2147483647;
+    const gauss = () => Math.sqrt(-2 * Math.log(aleatorio())) * Math.cos(2 * Math.PI * aleatorio());
+    const add = (tag, attrs, parent) => {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      parent.append(n);
+      return n;
+    };
+    const x = c => MX + c * (W - 2 * MX) / (CAMADAS - 1);
+    const y = n => MY + n * (H - 2 * MY) / (NEURONIOS - 1);
+    const grupo = add('g', { fill: 'none', 'stroke-linecap': 'round' }, svg);
+    const arestas = [];
+    for (let c = 0; c < CAMADAS - 1; c++) for (let a = 0; a < NEURONIOS; a++) for (let b = 0; b < NEURONIOS; b++) {
+      const w = gauss(), m = Math.min(1, Math.abs(w) / 2.2);
+      const cor = w > 0 ? '#58c4dd' : '#9a72d8', base = 0.16 + 0.74 * m;
+      const dx = (x(c + 1) - x(c)) / 2;
+      const el = add('path', { d: `M${x(c)} ${y(a)}C${x(c) + dx} ${y(a)} ${x(c + 1) - dx} ${y(b)} ${x(c + 1)} ${y(b)}`, stroke: cor, 'stroke-width': 0.7 + 3.1 * m, opacity: base }, grupo);
+      arestas.push({ el, m: Math.abs(w), cor, base });
+    }
+    [...arestas].sort((p, q) => p.m - q.m).forEach((e, i, todas) => { e.t = i < todas.length / 2 ? PODA * i / (todas.length / 2) : Infinity; });
+    for (let c = 0; c < CAMADAS; c++) for (let n = 0; n < NEURONIOS; n++)
+      add('circle', { cx: x(c), cy: y(n), r: 9, fill: '#101117', stroke: '#eeeef2', 'stroke-width': 2.5 }, svg);
+
+    function desenhar(t) {                              // t em segundos, antes da velocidade
+      const fim = PODA + FLASH + MANTEM;
+      const volta = t > fim ? Math.min(1, (t - fim) / VOLTA) : 0;
+      for (const e of arestas) {
+        const dt = t - e.t;
+        let op = e.base, cor = e.cor;
+        if (dt >= FLASH) op = e.base * volta;
+        else if (dt >= 0) { cor = '#fc6255'; op = Math.max(e.base, .7) * (1 - dt / FLASH); }
+        if (e.op !== op) e.el.setAttribute('opacity', e.op = op);
+        if (e.c !== cor) e.el.setAttribute('stroke', e.c = cor);
+      }
+    }
+    const quadroFinal = () => desenhar(PODA + FLASH);
+    quadroFinal();
+    addEventListener('beforeprint', quadroFinal);
+    if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+
+    const slide = svg.closest('.slide');
+    let inicio = null;
+    requestAnimationFrame(function quadro(agora) {
+      requestAnimationFrame(quadro);
+      if (!slide.classList.contains('active')) { inicio = null; return; }
+      inicio ??= agora;
+      desenhar(Math.max(0, ((agora - inicio) / 1000 % CICLO) * SPEED - ESPERA));
+    });
+  })();
+  </script>
+  <script>
+  // Slide 2: a mesma matriz W por dois caminhos. Pruning zera os 8 pesos de menor |w| (50%);
+  // quantização mantém os 16 e arredonda (uma casa decimal representa "menos bits por peso").
+  // Etapas: (1) W, (2) pruning, (3) quantização.
+  (() => {
+    const svg = document.getElementById('poda-quant');
+    const NS = 'http://www.w3.org/2000/svg';
+    const W = [[0.82, -0.07, 0.31, -1.24], [-0.12, 0.95, 0.06, -0.46], [0.27, -0.08, -1.10, 0.16], [-0.61, 0.09, 0.38, 0.71]];
+    const Q = [[0.8, -0.1, 0.3, -1.2], [-0.1, 1.0, 0.1, -0.5], [0.3, -0.1, -1.1, 0.2], [-0.6, 0.1, 0.4, 0.7]];
+    const C = 70, G = 6, M = 4 * C + 3 * G;
+    const fmt = (v, casas) => (v < 0 ? '\u2212' : '') + Math.abs(v).toFixed(casas).replace('.', ',');
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    // Fundo opaco e tinta pelo sinal (azul +, roxo −), mais forte quanto maior |w|.
+    const tinta = v => `fill:${v < 0 ? '#9a72d8' : '#58c4dd'};fill-opacity:${(0.08 + 0.3 * Math.min(1, Math.abs(v) / 1.24)).toFixed(2)}`;
+    function celula(x, y, texto, cls, parent, v) {
+      add('rect', { x, y, width: C, height: C, rx: 8, class: 'cel ' + cls }, parent);
+      if (v !== undefined) add('rect', { x, y, width: C, height: C, rx: 8, class: 'tinta', style: tinta(v) }, parent);
+      add('text', { x: x + C / 2, y: y + C / 2 + 8, class: 'val ' + cls }, parent, texto);
+    }
+    function matriz(x0, y0, s, d) {
+      W.forEach((linha, i) => linha.forEach((v, j) =>
+        celula(x0 + j * (C + G), y0 + i * (C + G), fmt(v, 2), '', add('g', staged(s, d + 0.03 * (i * 4 + j), 'pop-cel')), v)));
+    }
+    const defs = add('defs', {});
+    const mk = add('marker', { id: 'seta-pq', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'ponta' }, mk);
+
+    // W, à esquerda.
+    const WX = 60, WY = 171;
+    add('text', { x: WX + M / 2, y: WY - 28, ...staged(1, 0, 'nome') }, svg, 'W');
+    matriz(WX, WY, 1, 0.1);
+
+    // Pruning: os 8 menores |w| viram zero, do menor para o maior.
+    const PX = 740, PY = 0, QY = 342;
+    add('path', { d: `M${WX + M + 16} ${WY + M / 2 - 10}C565 ${WY + M / 2 - 10} 565 ${PY + M / 2} ${PX - 16} ${PY + M / 2}`, pathLength: 1, 'marker-end': 'url(#seta-pq)', ...staged(2, 0, 'flow seta poda') });
+    add('text', { x: 565, y: 112, ...staged(2, 0.2, 'rotulo poda') }, svg, 'pruning');
+    matriz(PX, PY, 2, 0.4);
+    const ordem = W.flat().map((v, k) => [Math.abs(v), k]).sort((a, b) => a[0] - b[0]).slice(0, 8);
+    ordem.forEach(([, k], r) => {
+      const i = Math.floor(k / 4), j = k % 4;
+      celula(PX + j * (C + G), PY + i * (C + G), '0', 'zero', add('g', staged(2, 1.3 + 0.12 * r)));
+    });
+    add('text', { x: PX + M + 44, y: PY + M / 2 + 11, ...staged(2, 2.4, 'efeito') }, svg, 'menos pesos');
+
+    // Quantização: todos os 16 continuam, com menos precisão.
+    add('path', { d: `M${WX + M + 16} ${WY + M / 2 + 10}C565 ${WY + M / 2 + 10} 565 ${QY + M / 2} ${PX - 16} ${QY + M / 2}`, pathLength: 1, 'marker-end': 'url(#seta-pq)', ...staged(3, 0, 'flow seta quant') });
+    add('text', { x: 565, y: 552, ...staged(3, 0.2, 'rotulo quant') }, svg, 'quantização');
+    matriz(PX, QY, 3, 0.4);
+    Q.forEach((linha, i) => linha.forEach((v, j) =>
+      celula(PX + j * (C + G), QY + i * (C + G), fmt(v, 1), 'arred', add('g', staged(3, 1.3 + 0.04 * (i * 4 + j))), v)));
+    add('text', { x: PX + M + 44, y: QY + M / 2 + 11, ...staged(3, 2.4, 'efeito') }, svg, 'menos bits por peso');
+  })();
+  </script>
+  <script>
+  // Slide 3: esparsidade s = N_zeros / N_total na mesma W do slide 2. Os pesos zeram em ordem de |w|:
+  // 4 na etapa 2 (25%) e mais 4 na etapa 3 (50%). A conta acompanha cada zero.
+  (() => {
+    const svg = document.getElementById('esp-matriz');
+    const conta = document.getElementById('esp-conta');
+    const slide = svg.closest('.slide');
+    const NS = 'http://www.w3.org/2000/svg';
+    const W = [0.82, -0.07, 0.31, -1.24, -0.12, 0.95, 0.06, -0.46, 0.27, -0.08, -1.10, 0.16, -0.61, 0.09, 0.38, 0.71];
+    const C = 120, G = 12, PASSO = 0.35, D0 = 0.2, SPEED = 1.25;
+    const fmt = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2).replace('.', ',');
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const tinta = v => `fill:${v < 0 ? '#9a72d8' : '#58c4dd'};fill-opacity:${(0.08 + 0.3 * Math.min(1, Math.abs(v) / 1.24)).toFixed(2)}`;
+    function celula(k, texto, cls, parent, v) {
+      const x = (k % 4) * (C + G), y = Math.floor(k / 4) * (C + G);
+      add('rect', { x, y, width: C, height: C, rx: 12, class: 'cel ' + cls }, parent);
+      if (v !== undefined) add('rect', { x, y, width: C, height: C, rx: 12, class: 'tinta', style: tinta(v) }, parent);
+      add('text', { x: x + C / 2, y: y + C / 2 + 12, class: 'val ' + cls }, parent, texto);
+    }
+    W.forEach((v, k) => celula(k, fmt(v), '', add('g', { 'data-s': 1, style: `--d:${0.03 * k}`, class: 'pop-cel' }), v));
+    const ordem = W.map((v, k) => [Math.abs(v), k]).sort((a, b) => a[0] - b[0]).slice(0, 8).map(([, k]) => k);
+    ordem.forEach((k, r) => celula(k, '0', 'zero', add('g', { 'data-s': r < 4 ? 2 : 3, style: `--d:${D0 + PASSO * (r % 4)}` })));
+
+    function mostrar(n) {
+      const z = String(n), p = String(n * 100 / 16).replace('.', '{,}');
+      const destaque = t => n ? `\\textcolor{#f4ce72}{${t}}` : t;
+      const tex = `\\begin{aligned} s &= \\dfrac{\\textcolor{#f4ce72}{N_{\\text{zeros}}}}{N_{\\text{total}}} \\\\[14pt] &= \\dfrac{${destaque(z)}}{16} = ${destaque(p + '\\%')} \\end{aligned}`;
+      if (window.katex) katex.render(tex, conta, { displayMode: true, throwOnError: false });
+      else conta.textContent = tex;
+    }
+    const alvo = etapa => [0, 0, 4, 8][etapa];
+    const etapaAtual = () => [3, 2, 1].find(k => slide.classList.contains('s' + k)) || 0;
+    let ultima = -1, timers = [];
+    function sincronizar() {
+      const e = etapaAtual();
+      if (e === ultima) return;
+      timers.forEach(clearTimeout); timers = [];
+      const animar = !slide.classList.contains('instant') && e === ultima + 1 && e >= 2;
+      ultima = e;
+      if (!animar) return mostrar(alvo(e));
+      const inicio = alvo(e - 1);
+      mostrar(inicio);
+      for (let r = 0; r < 4; r++)
+        timers.push(setTimeout(() => mostrar(inicio + r + 1), (D0 + PASSO * r + 0.25) * 1000 / SPEED));
+    }
+    new MutationObserver(sincronizar).observe(slide, { attributes: true, attributeFilter: ['class'] });
+    mostrar(0);
+    addEventListener('beforeprint', () => { timers.forEach(clearTimeout); mostrar(8); });
+    addEventListener('afterprint', () => { ultima = -1; sincronizar(); });
+  })();
+  </script>
+  <script>
+  // Slide 5: a mesma W (8 × 8) com 50% de zeros em três padrões. Não estruturado: os 32 menores |w|.
+  // Estruturado: as 4 linhas de menor norma. 2:4: os 2 menores de cada grupo de 4 consecutivos na linha.
+  // Colunas em dois blocos de 4 (espaço GG), para os grupos do 2:4. Lado dos quadrados ∝ sqrt(|w|); cor = sinal. Etapas: um padrão por etapa; a chave de 50% no fim.
+  (() => {
+    const svg = document.getElementById('padroes');
+    const NS = 'http://www.w3.org/2000/svg';
+    const N = 8, C = 40, G = 6, GV = 6, GG = 12, M = N * C + (N - 1) * G + GG, MV = N * C + (N - 1) * GV, X = [0, 491, 982], Y0 = 118;
+    let semente = 11;
+    const aleatorio = () => (semente = semente * 16807 % 2147483647) / 2147483647;
+    const gauss = () => Math.sqrt(-2 * Math.log(aleatorio())) * Math.cos(2 * Math.PI * aleatorio());
+    const W = Array.from({ length: N * N }, gauss);
+    const MAX = Math.max(...W.map(Math.abs));
+    const idx = [...W.keys()];
+    const naoEstr = new Set(idx.sort((a, b) => Math.abs(W[a]) - Math.abs(W[b])).slice(0, 32));
+    const norma = r => W.slice(r * N, r * N + N).reduce((t, v) => t + v * v, 0);
+    const linhas = new Set([...Array(N).keys()].sort((a, b) => norma(a) - norma(b)).slice(0, 4));
+    const estr = new Set([...W.keys()].filter(k => linhas.has(Math.floor(k / N))));
+    const nm = new Set();
+    for (let g = 0; g < N * N; g += 4) [g, g + 1, g + 2, g + 3].sort((a, b) => Math.abs(W[a]) - Math.abs(W[b])).slice(0, 2).forEach(k => nm.add(k));
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    const pos = (x0, k) => [x0 + (k % N) * (C + G) + (k % N >= 4 ? GG : 0), Y0 + Math.floor(k / N) * (C + GV)];
+
+    // Nome do padrão, definição geral (abaixo do nome) e o exemplo mostrado (abaixo da matriz).
+    [['não estruturado', 'zeros em qualquer posição', [['ex.: menores ', ''], ['|', 'n'], ['w', 'm'], ['|', 'n']], naoEstr],
+     ['estruturado', 'remove estruturas inteiras', [['ex.: linhas inteiras', '']], estr],
+     ['N:M', [['mantém ', ''], ['N', 'm'], [' (no máximo)', ''], ['\n', ''], ['de cada ', ''], ['M', 'm'], [' pesos', '']], [['ex.: 2:4 (mantém 2 de cada 4)', '']], nm]].forEach(([nome, def, exemplo, zeros], i) => {
+      const x0 = X[i], s = i + 1, cx = x0 + M / 2;
+      add('text', { x: cx, y: 36, ...staged(s, 0, 'nome') }, svg, nome);
+      const td = add('text', { x: cx, y: 72, ...staged(s, 0.1, 'def') });
+      let linha = false;
+      (Array.isArray(def) ? def : [[def, '']]).forEach(([txt, tipo]) => {
+        if (txt === '\n') { linha = true; return; }
+        add('tspan', { ...(tipo ? { class: 'math-def' } : {}), ...(linha ? { x: cx, dy: 32 } : {}) }, td, txt);
+        linha = false;
+      });
+      W.forEach((w, k) => {
+        const [x, y] = pos(x0, k), g = add('g', staged(s, 0.1));
+        add('rect', { x, y, width: C, height: C, rx: 6, class: 'cel' }, g);
+        const lado = (C - 10) * Math.sqrt(Math.abs(w) / MAX);
+        add('rect', { x: x + (C - lado) / 2, y: y + (C - lado) / 2, width: lado, height: lado, rx: 2, class: w < 0 ? 'peso neg' : 'peso' }, g);
+      });
+      // Zeros: no estruturado, linha por linha; nos outros, em ordem de |w| ou de grupo.
+      [...zeros].sort((a, b) => i === 1 ? a - b : Math.abs(W[a]) - Math.abs(W[b])).forEach((k, r) => {
+        const [x, y] = pos(x0, k);
+        add('rect', { x, y, width: C, height: C, rx: 6, ...staged(s, 0.7 + (i === 1 ? 0.25 * [...linhas].sort().indexOf(Math.floor(k / N)) : 0.03 * r), 'cel zero') });
+      });
+      if (i === 2) for (let g = 0; g < N * N; g += 4) {
+        const [x, y] = pos(x0, g);
+        add('rect', { x: x - 4, y: y - 2, width: 4 * C + 3 * G + 8, height: C + 4, rx: 8, ...staged(s, 0.4, 'grupo') });
+      }
+      const t = add('text', { x: cx, y: Y0 + MV + 40, ...staged(s, 1.8, 'desc') });
+      exemplo.forEach(([txt, tipo]) => add('tspan', tipo ? { class: tipo === 'm' ? 'math-d' : 'num-d' } : {}, t, txt));
+    });
+    // Chave sob os três: a mesma esparsidade.
+    const yb = Y0 + MV + 70;
+    add('path', { d: `M0 ${yb}v12H${X[2] + M}v-12M${(X[2] + M) / 2} ${yb + 12}v10`, ...staged(3, 2.4, 'chave') });
+    const t = add('text', { x: (X[2] + M) / 2, y: yb + 64, ...staged(3, 2.4, 'total') });
+    add('tspan', { class: 'math' }, t, 's');
+    add('tspan', { class: 'num' }, t, ' = 50%');
+  })();
+  </script>
+  <script>
+  // Slide 6: poda por magnitude na mesma W. Etapas: (1) W; (2) cada peso voa da célula para a sua
+  // posição na ordem crescente de |w| e vira uma barra; (3) limiar τ entre o 8º e o 9º: os 8 menores
+  // viram zero (matriz e barras); (4) limitação: um peso pequeno pode ter entrada grande.
+  (() => {
+    const svg = document.getElementById('magnitude');
+    const NS = 'http://www.w3.org/2000/svg';
+    const W = [0.82, -0.07, 0.31, -1.24, -0.12, 0.95, 0.06, -0.46, 0.27, -0.08, -1.10, 0.16, -0.61, 0.09, 0.38, 0.71];
+    const C = 100, G = 10, M = 4 * C + 3 * G, MX = 0, MY = 180;
+    const X0 = 560, SLOT = 50, BW = 38, BASE = 560, ESC = 380, CHIP = 38;
+    const TAU = (0.31 + 0.38) / 2;                   // entre o 8º (0,31) e o 9º (0,38) menores |w|
+    const cor = v => v < 0 ? '#9a72d8' : '#58c4dd';
+    const forca = v => (0.08 + 0.3 * Math.min(1, Math.abs(v) / 1.24)).toFixed(2);
+    const fmt = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2).replace('.', ',');
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '', extra = '') => ({ 'data-s': s, style: `--d:${d};${extra}`, class: cls });
+    function rica(attrs, partes) {
+      const t = add('text', attrs);
+      partes.forEach(([txt, tipo]) => add('tspan', tipo ? { class: tipo } : {}, t, txt));
+      return t;
+    }
+    const celXY = k => [MX + (k % 4) * (C + G), MY + Math.floor(k / 4) * (C + G)];
+    const ordem = W.map((v, k) => k).sort((a, b) => Math.abs(W[a]) - Math.abs(W[b]));
+    const slotX = r => X0 + r * SLOT + (SLOT - BW) / 2;
+
+    // (1) Matriz W.
+    add('text', { x: MX + M / 2, y: MY - 30, ...staged(1, 0, 'nome') }, svg, 'W');
+    W.forEach((v, k) => {
+      const [x, y] = celXY(k), g = add('g', staged(1, 0.03 * k, 'pop-cel'));
+      add('rect', { x, y, width: C, height: C, rx: 10, class: 'cel' }, g);
+      add('rect', { x, y, width: C, height: C, rx: 10, style: `fill:${cor(v)};fill-opacity:${forca(v)}` }, g);
+      add('text', { x: x + C / 2, y: y + C / 2 + 11, class: 'val' }, g, fmt(v));
+    });
+
+    // (2) Eixo, fichas que voam das células e barras de altura |w|.
+    add('path', { d: `M${X0 - 14} ${BASE}H1360`, ...staged(2, 0, 'eixo') });
+    add('path', { d: `M${X0 - 14} ${BASE}V${BASE - ESC * 1.32}`, ...staged(2, 0, 'eixo') });
+    rica({ x: X0 - 30, y: BASE - ESC * 1.32 + 10, ...staged(2, 0, 'rot-eixo') }, [['|', 'num'], ['w', 'math'], ['|', 'num']]);
+    ordem.forEach((k, r) => {
+      const v = W[k], [cx, cy] = celXY(k), x = slotX(r), y = BASE + 12;
+      const dx = cx + C / 2 - (x + CHIP / 2), dy = cy + C / 2 - (y + CHIP / 2);
+      add('rect', { x, y, width: CHIP, height: CHIP, rx: 6, ...staged(2, 0.1 + 0.07 * r, 'ficha voa', `--dx:${dx}px;--dy:${dy}px;fill:${cor(v)};fill-opacity:.85`) });
+      const h = Math.abs(v) * ESC;
+      add('rect', { x, y: BASE - h, width: BW, height: h, rx: 4, ...staged(2, 1.5 + 0.04 * r, 'barra pop', `fill:${cor(v)};fill-opacity:.75`) });
+    });
+
+    // (3) Limiar τ: os 8 menores viram zero na matriz e nas barras, na mesma ordem.
+    const yt = BASE - TAU * ESC;
+    add('path', { d: `M${X0 - 14} ${yt}H1340`, ...staged(3, 0, 'limiar') });
+    rica({ x: X0 - 26, y: yt + 10, ...staged(3, 0.3, 'tau') }, [['τ', 'math']]);
+    rica({ x: X0 + 40, y: 110, ...staged(3, 0.4, 'regra') }, [['|', 'num'], ['w', 'math'], ['| < ', 'num'], ['τ', 'math'], ['  ⇒  ', 'num'], ['w', 'math'], [' = 0', 'num']]);
+    ordem.slice(0, 8).forEach((k, r) => {
+      const d = 1.0 + 0.12 * r, [cx, cy] = celXY(k), x = slotX(r), h = Math.abs(W[k]) * ESC;
+      const g = add('g', staged(3, d));
+      add('rect', { x: cx, y: cy, width: C, height: C, rx: 10, class: 'zero' }, g);
+      add('text', { x: cx + C / 2, y: cy + C / 2 + 11, class: 'val zero' }, g, '0');
+      add('rect', { x, y: BASE - h, width: BW, height: h, rx: 4, class: 'zero' }, g);
+      add('rect', { x, y: BASE + 12, width: CHIP, height: CHIP, rx: 6, class: 'zero' }, g);
+    });
+
+    // (4) Limitação: o 0,09 é pequeno, mas multiplica uma entrada que pode ser grande.
+    const rq = ordem.indexOf(13), xq = slotX(rq) + BW / 2;
+    add('path', { d: `M${xq - 20} ${BASE - 250}C${xq - 20} ${BASE - 170} ${xq} ${BASE - 120} ${xq} ${BASE - 0.09 * ESC - 14}`, pathLength: 1, 'marker-end': 'url(#seta-mag)', ...staged(4, 0, 'aviso-seta flow') });
+    const defs = add('defs', {});
+    const mk = add('marker', { id: 'seta-mag', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'ponta-aviso' }, mk);
+    rica({ x: X0 + 40, y: BASE - 268, ...staged(4, 0.3, 'aviso') }, [['|', 'num'], ['w', 'math'], ['| pequeno, mas ', ''], ['|', 'num'], ['x', 'math'], ['| grande?', '']]);
+  })();
+  </script>
+  <script>
+  // Slide 5: peso pequeno × ativação grande. Etapas: (1) rede com |w| (espessura); (2) ativações;
+  // (3) contribuições w·x (as espessuras passam a representar |w·x|); (4) magnitude remove w2 e perde
+  // 2,0; (5) Wanda (|w|·|x|) remove w1 e perde 0,4.
+  (() => {
+    const svg = document.getElementById('wanda');
+    const NS = 'http://www.w3.org/2000/svg';
+    const X1 = [170, 170], X2 = [170, 470], Y = [600, 320], R = 46;
+    const BX = 1010, BESC = 150;                      // barras: início e escala (px por unidade)
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    // Texto com partes: ['w','m'] itálico, ['1','sub'] índice, ['= 0,8',''] texto matemático reto.
+    function rica(attrs, partes, parent = svg) {
+      const t = add('text', attrs, parent);
+      let baixo = false;
+      partes.forEach(([txt, tipo]) => {
+        const a = { class: tipo === 'm' ? 'math' : tipo === 'sub' ? 'num sub' : tipo === 'txt' ? 'txt' : 'num' };
+        if (tipo === 'sub' && !baixo) { a.dy = 9; baixo = true; } else if (tipo !== 'sub' && baixo) { a.dy = -9; baixo = false; }
+        add('tspan', a, t, txt);
+      });
+      return t;
+    }
+
+    // (1) Rede: espessura ∝ |w|.
+    const borda = (a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy); return [[a[0] + dx / l * R, a[1] + dy / l * R], [b[0] - dx / l * R, b[1] - dy / l * R]]; };
+    [[X1, 'a1'], [X2, 'a2']].forEach(([X, c]) => {
+      const [p, q] = borda(X, Y);
+      add('path', { d: `M${p[0]} ${p[1]}L${q[0]} ${q[1]}`, ...staged(1, 0.2, 'aresta ' + c) });
+    });
+    for (const [[x, y], nome, sub, cls] of [[X1, 'x', '1', 'entrada e1'], [X2, 'x', '2', 'entrada e2'], [Y, 'y', '', 'saida']]) {
+      const g = add('g', staged(1, 0, 'pop-cel'));
+      add('circle', { cx: x, cy: y, r: R, class: 'no ' + cls }, g);
+      rica({ x, y: y + 12, class: 'rot-no' }, sub ? [[nome, 'm'], [sub, 'sub']] : [[nome, 'm']], g);
+    }
+    rica({ x: 395, y: 196, ...staged(1, 0.4, 'peso') }, [['w', 'm'], ['1', 'sub'], [' = 0,8', '']]);
+    rica({ x: 395, y: 470, ...staged(1, 0.4, 'peso') }, [['w', 'm'], ['2', 'sub'], [' = 0,1', '']]);
+
+    // (2) Ativações: brilho em volta das entradas, proporcional a |x|.
+    add('circle', { cx: X1[0], cy: X1[1], r: R + 8, ...staged(2, 0, 'brilho fraco') });
+    add('circle', { cx: X2[0], cy: X2[1], r: R + 34, ...staged(2, 0, 'brilho forte') });
+    rica({ x: X1[0], y: X1[1] + R + 52, ...staged(2, 0.2, 'ativ') }, [['x', 'm'], ['1', 'sub'], [' = 0,5', '']]);
+    rica({ x: X2[0], y: X2[1] + R + 76, ...staged(2, 0.2, 'ativ forte') }, [['x', 'm'], ['2', 'sub'], [' = 20', '']]);
+
+    // (3) Contribuições para y (as espessuras das conexões mudam via CSS).
+    [[200, 'w', '1', 'x', '1', ' = 0,4', 0.4], [330, 'w', '2', 'x', '2', ' = 2,0', 2.0]].forEach(([y, w, i, x, j, val, v], k) => {
+      rica({ x: 760, y: y + 12, ...staged(3, 0.6 + 0.2 * k, 'contrib') }, [[w, 'm'], [i, 'sub'], [x, 'm'], [j, 'sub'], [val, '']]);
+      add('rect', { x: BX, y: y - 18, width: v * BESC, height: 36, rx: 6, ...staged(3, 0.8 + 0.2 * k, 'barra-c cresce') });
+    });
+
+    // (4) Magnitude: remove o menor |w| (w2) e perde a maior contribuição.
+    add('rect', { x: BX - 6, y: 330 - 24, width: 2.0 * BESC + 12, height: 48, rx: 9, ...staged(4, 0.3, 'perda mag') });
+    rica({ x: 760, y: 482, ...staged(4, 0, 'veredito mag') }, [['magnitude ', 'txt'], ['|', ''], ['w', 'm'], ['|', ''], [':  remove ', 'txt'], ['w', 'm'], ['2', 'sub']]);
+    // (5) Wanda: |w|·|x| remove w1, a menor contribuição.
+    add('rect', { x: BX - 6, y: 200 - 24, width: 0.4 * BESC + 12, height: 48, rx: 9, ...staged(5, 0.3, 'perda wanda') });
+    rica({ x: 760, y: 572, ...staged(5, 0, 'veredito wanda') }, [['Wanda ', 'txt'], ['|', ''], ['w', 'm'], ['|·|', ''], ['x', 'm'], ['|', ''], [':  remove ', 'txt'], ['w', 'm'], ['1', 'sub']]);
+  })();
+  </script>
+  <script>
+  // Slide 6: a equação de importância do Wanda (Sun et al., Eq. 1–2): S_ij = |W_ij| · ||X_j||_2,
+  // ilustrada numa rede com 2 entradas e 1 saída i. Etapas: (1) equação; (2) pesos W_i1 = 0,8 e
+  // W_i2 = −0,3; (3) ativações de cada entrada em 4 tokens de calibração e as normas:
+  // X_1 = (0,5; −0,5; 0,5; 0,5) → 1; X_2 = (2; −4; 1; 2) → √25 = 5; (4) S_i1 = 0,8 · 1 = 0,8 e
+  // S_i2 = 0,3 · 5 = 1,5; comparação dentro da saída i (Eq. 2): o menor S vira zero (W_i1).
+  (() => {
+    const svg = document.getElementById('wanda-eq');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    const kt = t => t.replace(/\$([^$]+)\$/g, (_, m) => window.katex ? katex.renderToString(m, { throwOnError: false }) : m);
+    function html(x, y, w, h, conteudo, s, d, cls = '') {
+      const fo = add('foreignObject', { x, y, width: w, height: h, ...staged(s, d, 'html ' + cls) });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      div.innerHTML = kt(conteudo);
+      fo.append(div);
+      return fo;
+    }
+    const AZ = '#58c4dd', RX = '#b9a0ee', DR = '#f4ce72';
+    const S = c => `{\\color{${DR}}${c}}`, Wc = c => `{\\color{${AZ}}${c}}`, Xc = c => `{\\color{${RX}}${c}}`;
+
+    // (1) Equação em destaque, termo a termo nas cores do slide.
+    html(180, 0, 1000, 100, `<div class="centro">$${S('S_{ij}')} = ${Wc('|W_{ij}|')} \\cdot ${Xc('\\lVert X_j \\rVert_2')}$</div>`, 1, 0, 'eq');
+
+    // Rede: entradas 1 e 2 (com as ativações de calibração à esquerda) → saída i.
+    const IN = [[420, 250], [420, 480]], OUT = [760, 365], R = 34;
+    const W = [0.8, -0.3], XV = [[0.5, -0.5, 0.5, 0.5], [2, -4, 1, 2]], NORM = [1, 5];
+    // (2) Arestas e pesos (espessura ∝ |w|).
+    IN.forEach(([x, y], k) => {
+      add('path', { d: `M${x + R} ${y}L${OUT[0] - R} ${OUT[1]}`, ...staged(2, 0.2, 'aresta'), style: `--d:0.2;stroke-width:${3 + 14 * Math.abs(W[k])}px` });
+    });
+    // (4, no fim) A conexão de menor score vira zero: apaga a aresta e deixa o tracejado amarelo.
+    const z = add('g', staged(4, 2.2));
+    add('path', { d: `M${IN[0][0] + R} ${IN[0][1]}L${OUT[0] - R} ${OUT[1]}`, class: 'apaga' }, z);
+    add('path', { d: `M${IN[0][0] + R} ${IN[0][1]}L${OUT[0] - R} ${OUT[1]}`, class: 'aresta-zero' }, z);
+    html(490, 200, 220, 50, `$${Wc('W_{i1}')} = ${Wc('0{,}8')}$`, 2, 0.4, 'rot-w');
+    html(590, 470, 220, 50, `$${Wc('W_{i2}')} = ${Wc('-0{,}3')}$`, 2, 0.4, 'rot-w');
+    [[IN[0], 'x_1'], [IN[1], 'x_2'], [OUT, 'y_i']].forEach(([[cx, cy], rot]) => {
+      add('circle', { cx, cy, r: R, ...staged(1, 0.4, 'no') });
+      html(cx - 40, cy - 24, 80, 50, `<div class="centro">$${rot}$</div>`, 1, 0.4, 'no-rot');
+    });
+    html(OUT[0] - 80, OUT[1] + 42, 160, 44, '<div class="centro">saída $i$</div>', 1, 0.4, 'nome-fo');
+
+    // (3) Ativações de cada entrada em 4 tokens e a norma.
+    const C = 56, G = 8, X0 = 40;
+    IN.forEach(([nx, ny], k) => {
+      XV[k].forEach((v, t) => {
+        const x = X0 + t * (C + G), y = ny - C / 2, g = add('g', staged(3, 0.1 + 0.25 * k + 0.05 * t, 'pop-cel'));
+        add('rect', { x, y, width: C, height: C, rx: 8, class: 'cel' }, g);
+        add('rect', { x, y, width: C, height: C, rx: 8, class: 'ativ', style: `fill-opacity:${(0.08 + 0.5 * Math.abs(v) / 4).toFixed(2)}` }, g);
+        add('text', { x: x + C / 2, y: y + C / 2 + 9, class: 'val' }, g, (v < 0 ? '−' : '') + String(Math.abs(v)).replace('.', ','));
+      });
+      add('path', { d: `M${X0 + 4 * (C + G) - G + 8} ${ny}H${nx - R - 8}`, pathLength: 1, 'marker-end': 'url(#seta-weq)', ...staged(3, 0.4 + 0.25 * k, 'flow fluxo') });
+      html(X0 - 10, ny + C / 2 + 4, 4 * (C + G) + 10, 50, `<div class="centro">$${Xc(`\\lVert X_${k + 1} \\rVert_2`)} = ${Xc(String(NORM[k]))}$</div>`, 3, 0.6 + 0.25 * k, 'norma');
+    });
+    add('text', { x: X0 + (4 * (C + G) - G) / 2, y: IN[0][1] - C / 2 - 18, ...staged(3, 0, 'nome-no') }, svg, '4 tokens de calibração');
+    const defs = add('defs', {});
+    const mk = add('marker', { id: 'seta-weq', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'ponta' }, mk);
+
+    // (4) Scores e comparação dentro da saída i.
+    const SX = 880;
+    html(SX, 200, 480, 70, `$${S('S_{i1}')} = ${Wc('|0{,}8|')} \\cdot ${Xc('1')} = ${S('0{,}8')}$`, 4, 0.2, 'conta');
+    html(SX, 290, 480, 70, `$${S('S_{i2}')} = ${Wc('|{-0{,}3}|')} \\cdot ${Xc('5')} = ${S('1{,}5')}$`, 4, 0.8, 'conta');
+    html(SX, 400, 480, 120, '<div class="nota">na saída $i$, o menor $S$ <span class="am">vira zero</span>:<br>sai $W_{i1}$, apesar de ser o maior peso</div>', 4, 1.8, 'nota-fo');
+  })();
+  </script>
+  <script>
+  // Slide 8: SparseGPT (Frantar & Alistarh, Eq. 1 e 3, Figura 4). Uma linha w de W e a sua saída
+  // y = wX em 6 tokens de calibração. Etapas: (1) w, objetivo e saída original; (2) máscara: os 2
+  // menores |w| viram zero e a saída se afasta; (3) os pesos restantes são ajustados (solução ótima
+  // da reconstrução, que é o que o OBS com H = XXᵀ fornece) e a saída volta; (4) erros comparados.
+  // X escolhido com canais correlacionados (x2 ≈ −x1; x3 ligado a x1 e x4), condição para compensar.
+  (() => {
+    const svg = document.getElementById('sparsegpt');
+    const NS = 'http://www.w3.org/2000/svg';
+    const w = [0.82, -0.07, 0.31, -1.24];
+    const X = [[1.0, 0.4, -0.6, 0.9, -0.3, 0.7], [-0.9, -0.5, 0.65, -0.9, 0.25, -0.6],
+               [1.5, -0.42, -0.64, 1.23, 0.29, 0.03], [0.5, -0.9, 0.2, 0.6, 0.8, -0.4]];
+    const T = 6, PODA = [1, 2], FICA = [0, 3];
+    const saida = v => [...Array(T).keys()].map(t => v.reduce((a, wi, i) => a + wi * X[i][t], 0));
+    const y = saida(w);
+    const wPoda = w.map((v, i) => PODA.includes(i) ? 0 : v);
+    // Reconstrução ótima com a máscara fixa: (X_F X_Fᵀ) w_F = X_F yᵀ (sistema 2 × 2).
+    const XF = FICA.map(i => X[i]);
+    const dot = (a, b) => a.reduce((s, v, k) => s + v * b[k], 0);
+    const [a, b, c, d] = [dot(XF[0], XF[0]), dot(XF[0], XF[1]), dot(XF[1], XF[0]), dot(XF[1], XF[1])];
+    const [p, q] = [dot(XF[0], y), dot(XF[1], y)], det = a * d - b * c;
+    const wF = [(d * p - b * q) / det, (a * q - c * p) / det];
+    const wComp = w.map((v, i) => FICA.includes(i) ? wF[FICA.indexOf(i)] : 0);
+    const yPoda = saida(wPoda), yComp = saida(wComp);
+    const erro = v => v.reduce((s, vt, t) => s + (vt - y[t]) ** 2, 0);
+    const fmt = (v, c = 2) => (v < 0 ? '−' : '') + Math.abs(v).toFixed(c).replace('.', ',');
+
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, dl, cls = '') => ({ 'data-s': s, style: `--d:${dl}`, class: cls });
+    function tex(x, yy, wd, h, codigo, s, dl, cls) {
+      const fo = add('foreignObject', { x, y: yy, width: wd, height: h, ...staged(s, dl, cls) });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      fo.append(div);
+      if (window.katex) katex.render(codigo, div, { throwOnError: false }); else div.textContent = codigo;
+    }
+
+    // (1) Linha w, objetivo e saída original.
+    const C = 90, G = 8, WX = 0, WY = 70;
+    const cx = i => WX + i * (C + G);
+    tex(0, 0, 400, 60, 'w', 1, 0, 'tex-nome');
+    w.forEach((v, i) => {
+      const g = add('g', staged(1, 0.05 * i, 'pop-cel'));
+      add('rect', { x: cx(i), y: WY, width: C, height: C, rx: 10, class: 'cel' }, g);
+      add('rect', { x: cx(i), y: WY, width: C, height: C, rx: 10, style: `fill:${v < 0 ? '#9a72d8' : '#58c4dd'};fill-opacity:${(0.08 + 0.3 * Math.min(1, Math.abs(v) / 1.24)).toFixed(2)}` }, g);
+      add('text', { x: cx(i) + C / 2, y: WY + C / 2 + 11, class: 'val' }, g, fmt(v));
+    });
+    tex(0, 250, 560, 80, String.raw`\min_{\hat w}\ \lVert wX - \hat w X \rVert_2^2`, 1, 0.4, 'tex-obj');
+
+    // Gráfico: em cada token, a saída original é uma faixa cinza (o alvo); dentro dela entram a
+    // saída sem ajuste (vermelha, etapa 2) e com ajuste (verde, etapa 3). Erro = distância ao alvo.
+    const GX = 640, GW = 720, MEIO = 330, ESC = 150, BAR = 34, ESP = 7, FX = 2 * BAR + 3 * ESP;
+    const gx = t => GX + t * (GW / T) + (GW / T - FX) / 2;
+    tex(GX, 0, GW, 60, String.raw`\text{saída } y = wX \text{ em 6 tokens}`, 1, 0, 'tex-graf');
+    add('path', { d: `M${GX} ${MEIO}H${GX + GW}`, ...staged(1, 0, 'eixo') });
+    for (let t = 0; t < T; t++)
+      add('text', { x: gx(t) + FX / 2, y: 600, ...staged(1, 0, 'nota') }, svg, `token ${t + 1}`);
+    function barras(vals, k, s, dl, cls) {
+      vals.forEach((v, t) => {
+        const h = Math.abs(v) * ESC;
+        const [x, wd] = k < 0 ? [gx(t), FX] : [gx(t) + ESP + k * (BAR + ESP), BAR];
+        add('rect', { x, y: v >= 0 ? MEIO - h : MEIO, width: wd, height: h, rx: 3, ...staged(s, dl + 0.06 * t, `barra ${cls} ${v >= 0 ? 'sobe' : 'desce'}`) });
+      });
+    }
+    barras(y, -1, 1, 0.5, 'orig');
+
+    // Legenda (à esquerda, abaixo do objetivo); o erro entra na etapa 4.
+    const LY = 400, LS = 74;
+    [['original (alvo)', 'orig', 1], ['sem ajuste', 'poda', 2], ['com ajuste', 'comp', 3]].forEach(([nome, cls, s], k) => {
+      const g = add('g', staged(s, 0.2));
+      add('rect', { x: 0, y: LY + k * LS - 22, width: 28, height: 28, rx: 4, class: 'barra ' + cls }, g);
+      add('text', { x: 44, y: LY + k * LS, class: 'leg' }, g, nome);
+    });
+    tex(250, LY + LS - 36, 300, 60, String.raw`\text{erro} = ${fmt(erro(yPoda)).replace(',', '{,}')}`, 4, 0, 'tex-erro poda');
+    tex(250, LY + 2 * LS - 36, 300, 60, String.raw`\text{erro} = ${fmt(erro(yComp)).replace(',', '{,}')}`, 4, 0.3, 'tex-erro comp');
+
+    // (2) Máscara: os 2 menores |w| viram zero; a saída se afasta.
+    PODA.forEach((i, r) => {
+      const g = add('g', staged(2, 0.1 + 0.15 * r));
+      add('rect', { x: cx(i), y: WY, width: C, height: C, rx: 10, class: 'zero' }, g);
+      add('text', { x: cx(i) + C / 2, y: WY + C / 2 + 11, class: 'val zero' }, g, '0');
+    });
+    barras(yPoda, 0, 2, 0.6, 'poda');
+
+    // (3) Ajuste dos restantes (com H = XXᵀ); a saída volta para perto da original.
+    FICA.forEach((i, r) => {
+      const g = add('g', staged(3, 0.1 + 0.15 * r));
+      add('rect', { x: cx(i), y: WY, width: C, height: C, rx: 10, class: 'cel' }, g);
+      add('rect', { x: cx(i), y: WY, width: C, height: C, rx: 10, class: 'ajuste' }, g);
+      add('text', { x: cx(i) + C / 2, y: WY + C / 2 + 11, class: 'val ajustado' }, g, fmt(wComp[i]));
+    });
+    barras(yComp, 1, 3, 0.6, 'comp');
+  })();
+  </script>
+  <script>
+  // Slide 9: algoritmo do SparseGPT (Frantar & Alistarh, Eq. 3, seções 3.1–3.2, Algoritmo 1 e Figura 4).
+  // W (6 × 8) e X sorteados com semente fixa; o script executa o próprio Algoritmo 1 (sem a divisão
+  // em lotes B, que não muda o resultado): H⁻¹ = (XXᵀ + λI)⁻¹, fator de Cholesky superior U, máscara
+  // escolhida a cada Bs = 4 colunas pelos menores w²/U_cc² (50% do bloco), colunas da esquerda para a
+  // direita; cada peso podado vira zero e os pesos à sua direita, na mesma linha, são ajustados.
+  // Etapas: (1) X; (2) diagonal de H⁻¹; (3) ε e máscara do 1º bloco; (4) varredura e compensação.
+  (() => {
+    const svg = document.getElementById('sparsegpt-alg');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    // HTML com trechos $…$ em KaTeX, dentro de foreignObject.
+    function html(x, y, wd, h, conteudo, s, d, cls = '') {
+      const fo = add('foreignObject', { x, y, width: wd, height: h, ...staged(s, d, cls) });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      div.innerHTML = conteudo.replace(/\$([^$]+)\$/g, (_, t) =>
+        window.katex ? katex.renderToString(t, { throwOnError: false }) : t);
+      fo.append(div);
+    }
+
+    // ---- Dados e Algoritmo 1 ----
+    let semente = 11;
+    const unif = () => (semente = semente * 16807 % 2147483647) / 2147483647;
+    const normal = () => Math.sqrt(-2 * Math.log(unif())) * Math.cos(2 * Math.PI * unif());
+    const R = 6, D = 8, N = 32, BS = 4, P = 0.5;
+    const W0 = [...Array(R)].map(() => [...Array(D)].map(() => 0.6 * normal()));
+    // Canais de entrada correlacionados (X = A Z), condição para a compensação ter efeito.
+    const A = [...Array(D)].map((_, i) => [...Array(D)].map((_, k) => (i === k ? 1 : 0) + 0.5 * normal()));
+    const Z = [...Array(D)].map(() => [...Array(N)].map(normal));
+    const X = A.map(a => [...Array(N)].map((_, t) => a.reduce((s, v, k) => s + v * Z[k][t], 0)));
+    const H = X.map(a => X.map(b => a.reduce((s, v, t) => s + v * b[t], 0)));
+    const lam = 0.01 * H.reduce((s, l, i) => s + l[i], 0) / D;            // amortecimento: 1% da média da diagonal (apêndice)
+    H.forEach((l, i) => { l[i] += lam; });
+    function inversa(M) {
+      const n = M.length, a = M.map((l, i) => [...l, ...M.map((_, j) => +(i === j))]);
+      for (let c = 0; c < n; c++) {
+        let p = c; for (let r = c + 1; r < n; r++) if (Math.abs(a[r][c]) > Math.abs(a[p][c])) p = r;
+        [a[c], a[p]] = [a[p], a[c]];
+        const piv = a[c][c]; a[c] = a[c].map(v => v / piv);
+        for (let r = 0; r < n; r++) if (r !== c) { const f = a[r][c]; a[r] = a[r].map((v, k) => v - f * a[c][k]); }
+      }
+      return a.map(l => l.slice(n));
+    }
+    const Hinv = inversa(H);
+    const L = Hinv.map(() => Array(D).fill(0));                            // Hinv = L Lᵀ, U = Lᵀ
+    for (let i = 0; i < D; i++) for (let j = 0; j <= i; j++) {
+      let s = Hinv[i][j]; for (let k = 0; k < j; k++) s -= L[i][k] * L[j][k];
+      L[i][j] = i === j ? Math.sqrt(s) : s / L[j][j];
+    }
+    const U = (i, j) => L[j][i];
+    const W = W0.map(l => [...l]);
+    const mascara = W.map(() => Array(D).fill(false));
+    const blocoDe = [];                                                     // [bloco] → células podadas
+    const valorAo = W.map(() => Array(D).fill(0));                          // valor ao processar a coluna
+    const primeiraPoda = W.map(() => D);
+    let JC = -1, depois = null;                                             // 1ª coluna com poda e W logo depois dela                                    // 1ª coluna podada da linha
+    for (let j = 0; j < D; j++) {
+      if (j % BS === 0) {
+        const cand = [];
+        for (let i = 0; i < R; i++) for (let c = j; c < j + BS; c++) cand.push([W[i][c] ** 2 / U(c, c) ** 2, i, c]);
+        cand.sort((a, b) => a[0] - b[0]);
+        blocoDe.push(cand.slice(0, Math.round(P * cand.length)).map(([, i, c]) => { mascara[i][c] = true; return [i, c]; }));
+      }
+      for (let i = 0; i < R; i++) {
+        valorAo[i][j] = W[i][j];
+        if (!mascara[i][j]) continue;
+        const e = W[i][j] / U(j, j);
+        for (let c = j; c < D; c++) W[i][c] -= e * U(j, c);
+        W[i][j] = 0;
+        primeiraPoda[i] = Math.min(primeiraPoda[i], j);
+      }
+      if (JC < 0 && mascara.some(l => l[j])) { JC = j; depois = W.map(l => [...l]); }
+    }
+    const maxW = Math.max(...W0.flat().map(Math.abs), ...valorAo.flat().map(Math.abs));
+    const tinta = v => `fill:${v < 0 ? '#9a72d8' : '#58c4dd'};fill-opacity:${(0.1 + 0.4 * Math.min(1, Math.abs(v) / maxW)).toFixed(2)}`;
+
+    // ---- Etapas (à esquerda) ----
+    const ETAPAS = [
+      ['Calibração', 'ativações de entrada $X$ da camada'],
+      ['Segunda ordem', '$H = XX^{\\top}$ e a inversa $H^{-1}$'],
+      ['Seleção', '<span class="f">$\\varepsilon_m = \\dfrac{w_m^2}{[H^{-1}]_{mm}}$</span> erro de remover $w_m$'],
+      ['Compensação', '<span class="f">$\\boldsymbol{\\delta}_m = -\\dfrac{w_m}{[H^{-1}]_{mm}}\\, H^{-1}_{:,m}$</span> <span class="vd">ajusta os pesos à direita</span>'],
+    ];
+    const EY = [0, 110, 220, 430];
+    ETAPAS.forEach(([titulo, corpo], k) => {
+      const y = EY[k], g = add('g', staged(k + 1, 0, 'etapa'));
+      add('circle', { cx: 24, cy: y + 24, r: 22, class: 'num-etapa' }, g);
+      add('text', { x: 24, y: y + 33, class: 'n-etapa' }, g, String(k + 1));
+      add('text', { x: 64, y: y + 35, class: 'tit-etapa' }, g, titulo);
+      html(64, y + (k >= 2 ? 58 : 50), 680, k >= 2 ? 104 : 50, corpo, k + 1, 0.15, 'corpo-etapa');
+    });
+    html(64, EY[2] + 164, 680, 44, 'menores $\\varepsilon$ <span class="am">viram zero</span>, um bloco de colunas por vez', 3, 0.4, 'corpo-etapa');
+    html(64, EY[3] + 164, 680, 44, 'depois, a próxima camada', 4, 4.2, 'corpo-etapa');
+
+    // ---- Matrizes (à direita), colunas alinhadas ----
+    const C = 52, G = 6, PS = C + G, X0 = 862;
+    const cx = j => X0 + j * PS;
+    const XY = 10, XH = 24, XG = 4, DY = 128, DH = 30, WY = 206;
+    const wy = i => WY + i * PS;
+    const rotulo = (y, codigo, s, d) => html(X0 - 172, y - 22, 160, 48, `<div class="rot">$${codigo}$</div>`, s, d, 'rot-mat');
+
+    // (1) X: 3 tokens de calibração; cada coluna é um canal de entrada (uma coluna de W).
+    const maxX = Math.max(...X.flat().map(Math.abs));
+    for (let t = 0; t < 3; t++) for (let j = 0; j < D; j++)
+      add('rect', { x: cx(j), y: XY + t * (XH + XG), width: C, height: XH, rx: 4, ...staged(1, 0.3 + 0.02 * (8 * t + j), 'ativ'), style: `--d:${0.3 + 0.02 * (8 * t + j)};fill-opacity:${(0.12 + 0.6 * Math.abs(X[j][t]) / maxX).toFixed(2)}` });
+    rotulo(XY + 1.5 * XH + XG, 'X^{\\top}', 1, 0.3);
+
+    // W densa (desde a etapa 1).
+    for (let i = 0; i < R; i++) for (let j = 0; j < D; j++) {
+      const g = add('g', staged(1, 0.5 + 0.015 * (D * i + j), 'pop-cel'));
+      add('rect', { x: cx(j), y: wy(i), width: C, height: C, rx: 8, class: 'cel' }, g);
+      add('rect', { x: cx(j), y: wy(i), width: C, height: C, rx: 8, style: tinta(W0[i][j]) }, g);
+    }
+    rotulo(WY + (R * PS - G) / 2, 'W', 1, 0.5);
+
+    // (2) Diagonal de H⁻¹ (tons proporcionais aos valores).
+    const dg = Hinv.map((l, j) => l[j]), maxD = Math.max(...dg);
+    dg.forEach((v, j) => add('rect', { x: cx(j), y: DY, width: C, height: DH, rx: 5, ...staged(2, 0.3 + 0.05 * j, 'diag'), style: `--d:${0.3 + 0.05 * j};fill-opacity:${(0.15 + 0.6 * v / maxD).toFixed(2)}` }));
+    for (let j = 0; j < D; j++)
+      add('path', { d: `M${cx(j) + C / 2} ${XY + 3 * (XH + XG)}V${DY - 6}`, pathLength: 1, ...staged(2, 0.05 * j, 'flow liga') });
+    rotulo(DY + DH / 2, '[H^{-1}]_{jj}', 2, 0.3);
+
+    // Blocos de Bs colunas: separador e chave abaixo de W.
+    const YB = wy(R) + 8;
+    add('path', { d: `M${cx(BS) - G / 2} ${WY - 8}V${YB}`, ...staged(3, 0, 'sep-bloco so-s3') });
+    const chave = (b, s, d) => add('path', { d: `M${cx(b * BS) + 2} ${YB + 4}v10H${cx(b * BS + BS) - G - 2}v-10`, ...staged(s, d, 'chave so-s3') });
+    chave(0, 3, 0.1);
+    html(cx(0), YB + 18, BS * PS, 44, '<div class="rot-bloco">bloco de $B_s$ colunas</div>', 3, 0.1, 'rot-mat so-s3');
+
+    // (3) Máscara do 1º bloco: metade dos pesos, os de menor ε.
+    const marca = (i, j, s, d) => add('rect', { x: cx(j) + 2, y: wy(i) + 2, width: C - 4, height: C - 4, rx: 7, ...staged(s, d, 'marca') });
+    blocoDe[0].forEach(([i, j], k) => marca(i, j, 3, 0.5 + 0.04 * k));
+
+    // (4) Compensação, mostrada numa coluna só (a 1ª com poda): os pesos marcados viram zero e os
+    // pesos à direita, na mesma linha, são ajustados (verde). As demais colunas seguem igual, uma por vez.
+    add('rect', { x: cx(JC) - 4, y: WY - 6, width: C + 8, height: R * PS + 6, rx: 10, ...staged(4, 0, 'coluna') });
+    for (let i = 0; i < R; i++) {
+      if (!mascara[i][JC]) continue;
+      add('rect', { x: cx(JC), y: wy(i), width: C, height: C, rx: 8, ...staged(4, 0.4, 'zero') });
+      for (let c = JC + 1; c < D; c++) {
+        if (mascara[i][c] && c < BS) continue;
+        const g = add('g', staged(4, 1.0 + 0.08 * (c - JC)));
+        add('rect', { x: cx(c), y: wy(i), width: C, height: C, rx: 8, class: 'cel' }, g);
+        add('rect', { x: cx(c), y: wy(i), width: C, height: C, rx: 8, style: tinta(depois[i][c]) }, g);
+        add('rect', { x: cx(c) + 1.5, y: wy(i) + 1.5, width: C - 3, height: C - 3, rx: 7, class: 'ajustado' }, g);
+      }
+    }
+    for (let i = 0; i < R; i++) if (mascara[i][JC])
+      add('path', { d: `M${cx(JC) + C / 2} ${wy(i) + C / 2}H${cx(D - 1) + C - 6}`, pathLength: 1, 'marker-end': 'url(#seta-comp)', ...staged(4, 0.8, 'flow seta-comp') });
+    const defs = add('defs', {});
+    const mk = add('marker', { id: 'seta-comp', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 5, markerHeight: 5, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'ponta-comp' }, mk);
+  })();
+  </script>
+  <script>
+  // Slide 7: Wanda aplicado ao LLM, camada a camada (Sun et al., seção 3, "Procedure" e Algoritmo 1):
+  // a camada seguinte recebe as ativações já calculadas com os pesos podados da anterior.
+  // Etapas: (1) calibração; (2) S na camada 1; (3) zeros por linha na camada 1; (4) camadas 2 a 4.
+  (() => {
+    const svg = document.getElementById('wanda-llm');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    function rica(attrs, partes, parent = svg) {
+      const t = add('text', attrs, parent);
+      let baixo = false;
+      partes.forEach(([txt, tipo]) => {
+        const sub = tipo === 'sub' || tipo === 'msub';
+        const a = { class: tipo === 'm' ? 'math' : tipo === 'msub' ? 'math sub' : sub ? 'num sub' : tipo === 'n' ? 'num' : '' };
+        if (sub && !baixo) { a.dy = 7; baixo = true; } else if (!sub && baixo) { a.dy = -7; baixo = false; }
+        add('tspan', a, t, txt);
+      });
+      return t;
+    }
+
+    // Lista de etapas (à esquerda), uma por etapa da animação.
+    const ETAPAS = [
+      ['Calibração', [['passar exemplos e medir as ativações', '']]],
+      ['Importância', [['S', 'm'], ['ij', 'msub'], [' = |', 'n'], ['W', 'm'], ['ij', 'msub'], ['| · ‖', 'n'], ['X', 'm'], ['j', 'msub'], ['‖', 'n'], ['2', 'sub']]],
+      ['Seleção', [['por saída, zerar os menores ', ''], ['S', 'm']]],
+      ['Próximas camadas', [['propagar pela camada podada e repetir', '']]],
+    ];
+    ETAPAS.forEach(([titulo, desc], k) => {
+      const y = 60 + k * 150, g = add('g', staged(k + 1, 0, 'etapa'));
+      add('circle', { cx: 24, cy: y - 10, r: 22, class: 'num-etapa' }, g);
+      add('text', { x: 24, y: y - 1, class: 'n-etapa' }, g, String(k + 1));
+      add('text', { x: 64, y, class: 'tit-etapa' }, g, titulo);
+      rica({ x: 64, y: y + 48, class: 'desc-etapa' }, desc, g);
+    });
+
+    // Camadas em sequência (à direita).
+    const L = 4, BW = 120, BH = 120, GAP = 44, X0 = 740, BY = 150;
+    const bx = l => X0 + l * (BW + GAP);
+    const C = 24, CG = 4, GM = 4 * C + 3 * CG, GY = BY + BH + 60;
+    // S de cada camada (4 × 4) e os 2 menores por linha (sorteados com semente fixa).
+    let semente = 3;
+    const aleatorio = () => (semente = semente * 16807 % 2147483647) / 2147483647;
+    const S = [...Array(L)].map(() => [...Array(4)].map(() => [...Array(4)].map(aleatorio)));
+    const defs = add('defs', {});
+    const mk = add('marker', { id: 'seta-wl', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'ponta' }, mk);
+
+    // Entrada: tokens de calibração.
+    for (let t = 0; t < 3; t++) add('rect', { x: X0 - 104, y: BY + 18 + t * 30, width: 44, height: 24, rx: 5, ...staged(1, 0.05 * t, 'token') });
+    add('text', { x: X0 - 82, y: BY - 18, ...staged(1, 0, 'rot-peq') }, svg, 'exemplos');
+
+    for (let l = 0; l < L; l++) {
+      // Etapa em que a camada é processada: a 1ª nas etapas 1–3; as demais na etapa 4, em sequência.
+      const s1 = l ? 4 : 1, s2 = l ? 4 : 2, s3 = l ? 4 : 3, d0 = l ? (l - 1) * 1.5 : 0;
+      add('rect', { x: bx(l), y: BY, width: BW, height: BH, rx: 14, ...staged(1, 0.1 * l, 'camada') });
+      add('text', { x: bx(l) + BW / 2, y: BY + BH / 2 + 10, ...staged(1, 0.1 * l, 'rot-camada') }, svg, `camada ${l + 1}`);
+      // Ativações que chegam à camada (calibração, ou saída da camada anterior já podada).
+      const xa = l ? bx(l - 1) + BW : X0 - 56;
+      add('path', { d: `M${xa + 4} ${BY + BH / 2}H${bx(l) - 6}`, pathLength: 1, 'marker-end': 'url(#seta-wl)', ...staged(s1, d0 + 0.3, 'flow fluxo') });
+      for (let j = 0; j < 4; j++)
+        add('rect', { x: bx(l) + 14 + j * 26, y: BY - 34, width: 22, height: 18, rx: 4, ...staged(s1, d0 + 0.5, 'norma'), style: `--d:${d0 + 0.5};fill-opacity:${j === 1 ? 0.85 : 0.2 + 0.1 * j}` });
+      // S da camada (amarelo) e zeros por linha.
+      const gx = bx(l) + (BW - GM) / 2;
+      S[l].forEach((linha, i) => linha.forEach((v, j) =>
+        add('rect', { x: gx + j * (C + CG), y: GY + i * (C + CG), width: C, height: C, rx: 4, ...staged(s2, d0 + (l ? 0.7 : 0.2) + 0.02 * (4 * i + j), 'escore'), style: `--d:${d0 + (l ? 0.7 : 0.2) + 0.02 * (4 * i + j)};fill-opacity:${(0.15 + 0.6 * v).toFixed(2)}` })));
+      S[l].forEach((linha, i) => [0, 1, 2, 3].sort((a, b) => linha[a] - linha[b]).slice(0, 2).forEach(j =>
+        add('rect', { x: gx + j * (C + CG), y: GY + i * (C + CG), width: C, height: C, rx: 4, ...staged(s3, d0 + (l ? 1.1 : 0.2) + 0.05 * i, 'zero') })));
+      add('rect', { x: bx(l), y: BY, width: BW, height: BH, rx: 14, ...staged(s3, d0 + (l ? 1.3 : 0.6), 'podada') });
+    }
+    rica({ x: bx(0) + BW / 2, y: GY + GM + 44, ...staged(2, 0.4, 'rot-s') }, [['S', 'm']]);
+    rica({ x: bx(0) + BW / 2, y: BY - 50, ...staged(1, 0.6, 'rot-norma') }, [['‖', 'n'], ['X', 'm'], ['j', 'msub'], ['‖', 'n'], ['2', 'sub']]);
+  })();
+  </script>
+  <script>
+  // Slide 10: Wanda++ (Yang et al., Findings of ACL 2025, seção 4 e Algoritmo 1). Por bloco decodificador
+  // (índice ℓ omitido): (1) bloco com entrada X e saída f(X); (2) RGS: perda regional L_RGS = ||f(X)||₂,
+  // retropropagação só dentro do bloco → G; S_ij = (αG_ij + ||X_j||₂)·|W_ij| (Eq. 4); (3) poda pela RGS;
+  // (4) RO: retropropagação + RMSprop minimizam ||f(X) − f̃(X)||² entre as saídas do bloco denso e podado
+  // (Eq. 5, simplificada), repetido algumas vezes com nova poda.
+  (() => {
+    const svg = document.getElementById('wandapp');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    function tex(x, y, w, h, codigo, s, d, cls = '') {
+      const fo = add('foreignObject', { x, y, width: w, height: h, ...staged(s, d, 'tex ' + cls) });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      fo.append(div);
+      if (window.katex) katex.render(codigo, div, { throwOnError: false }); else div.textContent = codigo;
+    }
+    const defs = add('defs', {});
+    for (const [id, cls] of [['seta-pp', 'ponta'], ['seta-pp-g', 'ponta-g'], ['seta-pp-ro', 'ponta-ro']]) {
+      const mk = add('marker', { id, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+      add('path', { d: 'M0 0 10 5 0 10z', class: cls }, mk);
+    }
+
+    // (1) Bloco decodificador com atenção e MLP (pesos em grades); entrada X e saída f(X).
+    const BX = 180, BY = 74, BW = 700, BH = 220, MID = BY + 130;   // MID: linha do fluxo = centro de atenção e MLP
+    add('rect', { x: BX, y: BY, width: BW, height: BH, rx: 20, ...staged(1, 0.1, 'bloco') });
+    add('text', { x: BX + 22, y: BY + 38, ...staged(1, 0.1, 'rot-bloco') }, svg, 'bloco decodificador');
+    add('path', { d: `M20 ${MID}H${BX - 6}`, 'marker-end': 'url(#seta-pp)', ...staged(1, 0.2, 'fluxo') });
+    tex(20, MID - 58, BX - 40, 50, 'X', 1, 0.2, 'centro');
+    add('path', { d: `M${BX + BW + 4} ${MID}H1050`, 'marker-end': 'url(#seta-pp)', ...staged(1, 0.5, 'fluxo') });
+    tex(BX + BW + 10, MID - 62, 160, 50, 'f(X)', 1, 0.5, 'centro');
+
+    const SUB = [['atenção', BX + 40], ['MLP', BX + 380]], SW = 280, SH = 140, SY = BY + 60;
+    const C = 22, G = 5, LIN = 3, COL = 6;
+    let semente = 9;
+    const aleatorio = () => (semente = semente * 16807 % 2147483647) / 2147483647;
+    const grades = SUB.map(([nome, sx], k) => {
+      add('rect', { x: sx, y: SY, width: SW, height: SH, rx: 12, ...staged(1, 0.25 + 0.1 * k, 'sub') });
+      add('text', { x: sx + SW / 2, y: SY + 34, ...staged(1, 0.25 + 0.1 * k, 'rot-sub') }, svg, nome);
+      const gx = sx + (SW - (COL * C + (COL - 1) * G)) / 2, gy = SY + 52;
+      const cel = [];
+      for (let i = 0; i < LIN; i++) for (let j = 0; j < COL; j++) {
+        const x = gx + j * (C + G), y = gy + i * (C + G), v = aleatorio();
+        add('rect', { x, y, width: C, height: C, rx: 4, ...staged(1, 0.3 + 0.1 * k), class: 'peso', style: `--d:${0.3 + 0.1 * k};fill-opacity:${(0.25 + 0.6 * v).toFixed(2)}` });
+        cel.push({ x, y, v: aleatorio() });
+      }
+      return cel;
+    });
+    add('path', { d: `M${SUB[0][1] + SW + 4} ${SY + SH / 2}H${SUB[1][1] - 6}`, 'marker-end': 'url(#seta-pp)', ...staged(1, 0.35, 'fluxo') });
+    add('path', { d: `M${BX + 4} ${MID}H${SUB[0][1] - 6}`, ...staged(1, 0.25, 'fluxo') });
+    add('path', { d: `M${SUB[1][1] + SW + 4} ${SY + SH / 2}H${BX + BW - 4}`, ...staged(1, 0.45, 'fluxo') });
+
+    // (2) RGS: perda regional na saída do bloco e gradiente de volta, só dentro do bloco.
+    tex(1056, MID - 26, 304, 50, String.raw`L_{\text{RGS}} = \lVert f(X) \rVert_2`, 2, 0, 'centro grad');
+    add('text', { x: 1208, y: MID + 64, ...staged(2, 0, 'rot-perda') }, svg, 'perda regional');
+    add('path', { d: `M1200 ${MID - 34}C1160 ${BY - 40} 1000 ${BY - 34} ${BX + BW - 40} ${BY - 34}H${BX + 30}`, pathLength: 1, 'marker-end': 'url(#seta-pp-g)', ...staged(2, 0.3, 'flow gradiente') });
+    const rg = add('text', { x: BX + BW / 2, y: BY - 52, ...staged(2, 0.8, 'rot-grad') });
+    add('tspan', {}, rg, 'retropropagação só no bloco: gradiente ');
+    add('tspan', { class: 'math' }, rg, 'G');
+    tex(0, 336, 640, 60, String.raw`\text{RGS: } S_{ij} = (\alpha\,{\color{#fc6255}G_{ij}} + \lVert X_j \rVert_2)\cdot |W_{ij}|`, 2, 1.2, 'formula');
+    // O que é G: o tamanho do gradiente da perda regional em relação a cada peso.
+    tex(0, 404, 330, 100, String.raw`{\color{#fc6255}G_{ij}} = \left| \dfrac{\partial {\color{#fc6255}L_{\text{RGS}}}}{\partial W_{ij}} \right|`, 2, 1.5, 'formula g');
+    add('text', { x: 290, y: 462, ...staged(2, 1.7, 'nota') }, svg, 'gradiente regional');
+
+    // (3) Poda pela RGS: metade dos pesos de cada subcamada vira zero.
+    grades.forEach((cel, k) => [...cel].sort((a, b) => a.v - b.v).slice(0, cel.length / 2).forEach((c, r) =>
+      add('rect', { x: c.x, y: c.y, width: C, height: C, rx: 4, ...staged(3, 0.1 + 0.04 * r + 0.2 * k, 'zero') })));
+
+    // (4) RO: retropropagação + otimizador minimizam a diferença entre as saídas do bloco denso e podado.
+    tex(720, 336, 640, 60, String.raw`L_{\text{RO}} = \lVert f(X) - \tilde f(X) \rVert_2^2`, 4, 0, 'formula ro');
+    const kt = l => l.replace(/\$([^$]+)\$/g, (_, t) => window.katex ? katex.renderToString(t, { throwOnError: false }) : t);
+    function balao(x, y, w, h, cls, conteudo, d) {
+      const fo = add('foreignObject', { x, y, width: w, height: h, ...staged(4, d, 'balao-fo') });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      div.className = 'balao ' + cls;
+      div.innerHTML = kt(conteudo);
+      fo.append(div);
+    }
+    // Balão 1: para que serve a L_RO e o que é f e f̃.
+    balao(720, 398, 640, 124, '', '<strong>ajuda a ajustar os pesos após a poda</strong><br>$f$ denso, $\\tilde f$ podado', 0.5);
+    // Balão 2 (largura toda): o ciclo poda → retropropagação → otimizador, repetido.
+    balao(0, 526, 1360, 114, 'ciclo', '<div class="passos">' + [
+      '<span class="chip poda">poda (RGS)</span>', '<span class="sb">→</span>',
+      '<span class="chip retro">retropropagação de $L_{\\text{RO}}$</span>', '<span class="sb">→</span>',
+      '<span class="chip otim">otimizador ajusta os pesos</span>',
+    ].join('') + '</div><div class="volta"><span>repete algumas vezes</span></div>', 1.0);
+    SUB.forEach(([, sx], k) => add('rect', { x: sx - 4, y: SY - 4, width: SW + 8, height: SH + 8, rx: 14, ...staged(4, 0.5 + 0.2 * k, 'ajuste') }));
+    add('path', { d: `M1000 ${MID + 8}C1010 ${BY + BH + 40} 760 ${BY + BH + 40} ${SUB[1][1] + SW / 2} ${SY + SH + 10}`, pathLength: 1, 'marker-end': 'url(#seta-pp-ro)', ...staged(4, 0.3, 'flow seta-ro') });
+  })();
+  </script>
+  <script>
+  // Slide 11: 50% de pesos zerados = 50% menos trabalho? A mesma W dos slides 1–4.
+  // (1) W original → os 8 menores |w| viram zero; (2) armazenamento: denso, 16 números (zeros
+  // incluídos) × esparso, 8 valores + 8 posições; (3) Wx com kernel denso: 16 multiplicações, 8 por
+  // zero; (4) kernel esparso: 8 multiplicações, cada uma lendo a posição (coluna j) para achar x_j.
+  // Simplificação do formato esparso (CSR no README).
+  (() => {
+    const svg = document.getElementById('armazenamento');
+    const NS = 'http://www.w3.org/2000/svg';
+    const W0 = [[0.82, -0.07, 0.31, -1.24], [-0.12, 0.95, 0.06, -0.46], [0.27, -0.08, -1.10, 0.16], [-0.61, 0.09, 0.38, 0.71]];
+    const ordem = W0.flat().map((v, k) => [Math.abs(v), k]).sort((a, b) => a[0] - b[0]).slice(0, 8).map(([, k]) => k);
+    const W = W0.map((l, i) => l.map((v, j) => ordem.includes(4 * i + j) ? 0 : v));
+    const nz = [];
+    W.forEach((l, i) => l.forEach((v, j) => { if (v) nz.push([v, i + 1, j + 1]); }));
+    const fmt = v => (v < 0 ? '−' : '') + Math.abs(v).toFixed(2).replace('.', ',');
+    const tinta = v => `fill:${v < 0 ? '#9a72d8' : '#58c4dd'};fill-opacity:${(0.08 + 0.3 * Math.min(1, Math.abs(v) / 1.24)).toFixed(2)}`;
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    function celula(x, y, c, v, texto, parent, cls = 'val') {
+      add('rect', { x, y, width: c, height: c, rx: 7, class: v === 0 ? 'zero' : 'cel' }, parent);
+      if (v) add('rect', { x, y, width: c, height: c, rx: 7, style: tinta(v) }, parent);
+      if (texto !== undefined) add('text', { x: x + c / 2, y: y + c / 2 + 8, class: v === 0 ? cls + ' zero-t' : cls }, parent, texto);
+    }
+    // x_j em fonte matemática (x itálico + índice).
+    function xj(t, j, cls = 'xj') {
+      add('tspan', { class: cls }, t, 'x');
+      add('tspan', { class: cls + ' sub', dy: 7 }, t, String(j));
+    }
+    const titulo = (x, y, txt, s, d) => add('text', { x, y, ...staged(s, d, 'titulo') }, svg, txt);
+    const conta = (x, y, txt, s, d, cls = '') => add('text', { x, y, ...staged(s, d, 'conta ' + cls) }, svg, txt);
+
+    // (1) W original → pruning de 50%.
+    const MC = 58, MG = 6, MY = 44;
+    add('text', { x: (4 * MC + 3 * MG) / 2, y: 28, ...staged(1, 0, 'nome') }, svg, 'W');
+    W0.forEach((l, i) => l.forEach((v, j) => celula(j * (MC + MG), MY + i * (MC + MG), MC, v, fmt(v), add('g', staged(1, 0.02 * (4 * i + j), 'pop-cel')), 'val peq')));
+    ordem.forEach((k, r) => {
+      const i = k >> 2, j = k & 3, g = add('g', staged(1, 0.8 + 0.08 * r));
+      celula(j * (MC + MG), MY + i * (MC + MG), MC, 0, '0', g, 'val peq');
+    });
+
+    // (2) Armazenamento.
+    const X0 = 370, BX = 1120;
+    titulo(X0, 30, 'denso: guarda tudo, até os zeros', 2, 0);
+    const C = 40, G = 6;
+    for (let k = 0; k < 16; k++)
+      celula(X0 + k * (C + G), 46, C, W[k >> 2][k & 3], undefined, add('g', staged(2, 0.1 + 0.025 * k, 'pop-cel')));
+    conta(BX, 74, '16 números', 2, 0.5);
+    titulo(X0, 130, 'esparso: só os não nulos + a posição de cada um', 2, 0.6);
+    const SC = 56, SG = 10, SY = 146, PY = SY + SC + 6;
+    nz.forEach(([v, i, j], k) => {
+      const x = X0 + k * (SC + SG), g = add('g', staged(2, 0.7 + 0.05 * k, 'pop-cel'));
+      celula(x, SY, SC, v, fmt(v), g, 'val peq');
+      add('rect', { x, y: PY, width: SC, height: 34, rx: 7, class: 'pos' }, g);
+      add('text', { x: x + SC / 2, y: PY + 24, class: 'pos-t' }, g, `${i},${j}`);
+    });
+    const RX = X0 + 8 * (SC + SG) + 6;
+    add('text', { x: RX, y: SY + SC / 2 + 8, ...staged(2, 1.1, 'lado') }, svg, 'valor');
+    add('text', { x: RX, y: PY + 25, ...staged(2, 1.1, 'lado pos-l') }, svg, 'posição');
+    conta(BX, 190, '8 + 8 números', 2, 1.2);
+    add('text', { x: BX, y: 232, ...staged(2, 1.4, 'conta mudo-t') }, svg, 'memória:');
+    add('text', { x: BX, y: 268, ...staged(2, 1.4, 'conta pior') }, svg, 'não diminui');
+
+    // (3) Wx com kernel denso: uma linha de multiplicações por saída; colunas = x_j.
+    const KY = 344, KC = 44, KG = 6, TY = KY + 52;
+    titulo(0, KY, 'kernel denso: multiplica tudo', 3, 0);
+    for (let j = 0; j < 4; j++) xj(add('text', { x: j * (KC + KG) + KC / 2 - 6, y: TY - 12, ...staged(3, 0.1, 'cab') }), j + 1);
+    W.forEach((l, i) => l.forEach((v, j) => {
+      const x = j * (KC + KG), y = TY + i * (KC + KG), g = add('g', staged(3, 0.2 + 0.04 * (4 * i + j), 'pop-cel'));
+      add('rect', { x, y, width: KC, height: KC, rx: 7, class: v ? 'mult' : 'mult-zero' }, g);
+      add('text', { x: x + KC / 2, y: y + KC / 2 + 8, class: v ? 'mult-t' : 'mult-t zero-t' }, g, v ? '×' : '0×');
+    }));
+    const DX = 4 * (KC + KG) + 24;
+    conta(DX, TY + 64, '16 multiplicações', 3, 1.0, 'esq');
+    conta(DX, TY + 106, '8 delas por zero', 3, 1.2, 'esq aviso');
+
+    // (4) Kernel esparso: só os não nulos; cada conta lê a coluna j para buscar x_j.
+    const EX = 720, EW = 78;
+    titulo(EX, KY, 'kernel esparso: só os não nulos', 4, 0);
+    let k = 0;
+    W.forEach((l, i) => {
+      let c = 0;
+      l.forEach((v, j) => {
+        if (!v) return;
+        const x = EX + c * (EW + KG), y = TY + i * (KC + KG), g = add('g', staged(4, 0.2 + 0.08 * k, 'pop-cel'));
+        add('rect', { x, y, width: EW, height: KC, rx: 7, class: 'mult-esp' }, g);
+        const t = add('text', { x: x + 14, y: y + KC / 2 + 8, class: 'mult-t esq' }, g, '× ');
+        xj(t, j + 1, 'xj pos-c');
+        c++; k++;
+      });
+    });
+    const SX = EX + 3 * (EW + KG) + 24;
+    conta(SX, TY + 64, '8 multiplicações', 4, 0.9, 'esq melhor');
+    conta(SX, TY + 106, '+ ler as posições', 4, 1.1, 'esq pos-c');
+  })();
+  </script>
+  <script>
+  // Slide 12: por que 50% de esparsidade não dá 2×. Barras = tempo relativo ao denso.
+  // Kernel (etapas 1–2): denso; esparso genérico (qualitativo, ≲ 1×); 2:4 + Sparse Tensor Cores ≈ 1,6×
+  // (Sun et al., Wanda, seção 4.3 e Tabela 5: 1,54× a 1,63× nas camadas lineares do LLaMA-65B, A6000).
+  // LLM inteiro (etapas 3–4), Lei de Amdahl, exemplo hipotético: 60% do tempo acelerável em 2× →
+  // 0,6/2 + 0,4 = 0,7 → 1/0,7 ≈ 1,43×. Medido: 1,24× ponta a ponta no LLaMA-7B (251 ms × 312 ms).
+  (() => {
+    const svg = document.getElementById('velocidade');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const n = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, v);
+      if (text !== undefined) n.textContent = text;
+      parent.append(n);
+      return n;
+    }
+    const staged = (s, d, cls = '') => ({ 'data-s': s, style: `--d:${d}`, class: cls });
+    function tex(x, y, w, h, codigo, s, d, cls = '') {
+      const fo = add('foreignObject', { x, y, width: w, height: h, ...staged(s, d, 'tex ' + cls) });
+      const div = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+      fo.append(div);
+      if (window.katex) katex.render(codigo, div, { throwOnError: false }); else div.textContent = codigo;
+    }
+    const X0 = 400, U = 720, H = 54;                   // U: largura do tempo denso (100%)
+    function linha({ s, y, nome, sub, fim, seg, d0 = 0 }) {
+      add('text', { x: 0, y: y + 24, ...staged(s, d0, 'nome') }, svg, nome);
+      add('text', { x: 0, y: y + 54, ...staged(s, d0, 'sub') }, svg, sub);
+      let x = X0;
+      seg.forEach(([f, cls, rot], k) => {
+        const w = f * U;
+        add('rect', { x, y, width: w, height: H, rx: 6, ...staged(s, d0 + 0.2 + 0.25 * k, `seg ${cls} cresce-x`) });
+        if (rot) add('text', { x: x + w / 2, y: y + H / 2 + 9, ...staged(s, d0 + 0.4 + 0.25 * k, 'rot-seg ' + cls) }, svg, rot);
+        x += w;
+      });
+      if (fim) add('text', { x: x + 18, y: y + H / 2 + 12, ...staged(s, d0 + 0.3 + 0.25 * seg.length, 'fim') }, svg, fim);
+      return x;
+    }
+
+    // Kernel (multiplicação de matrizes): referência denso = 1×, ideal 2× = metade.
+    const KT = 30, KB = 270;
+    add('path', { d: `M${X0} ${KT}V${KB}`, ...staged(1, 0, 'eixo') });
+    add('path', { d: `M${X0 + U / 2} ${KT}V${KB}`, ...staged(1, 0.6, 'ideal') });
+    add('text', { x: X0 + U / 2, y: 18, ...staged(1, 0.6, 'rot-ideal') }, svg, 'ideal: 2×');
+    add('path', { d: `M${X0 + U} ${KT}V${KB}`, ...staged(1, 0.3, 'ref') });
+    linha({ s: 1, y: 40, nome: 'kernel denso', sub: 'processa os zeros também', fim: '1×',
+      seg: [[0.5, 'util', 'contas úteis'], [0.5, 'zeros', 'zeros']] });
+    linha({ s: 1, y: 122, nome: 'kernel esparso', sub: 'genérico', fim: '≲ 1×', d0: 1.0,
+      seg: [[0.5, 'util', 'contas'], [0.32, 'indice', 'posições'], [0.33, 'irregular', 'acesso irregular']] });
+    linha({ s: 2, y: 204, nome: '2:4 + hardware', sub: 'Sparse Tensor Cores', fim: '≈ 1,6×',
+      seg: [[0.5, 'util', 'contas'], [0.125, 'indice', '']] });
+
+    // LLM inteiro: só parte do tempo acelera (Lei de Amdahl).
+    add('path', { d: `M0 300H1360`, ...staged(3, 0, 'divisa') });
+    add('text', { x: 0, y: 338, ...staged(3, 0, 'nome') }, svg, 'Lei de Amdahl');
+    add('text', { x: 0, y: 370, ...staged(3, 0, 'sub') }, svg, 'no LLM inteiro');
+    const explicacao = (x, titulo, linhas, cls) => {
+      add('text', { x, y: 334, ...staged(3, 0, 'parte-titulo ' + cls) }, svg, titulo);
+      linhas.forEach((t, i) => add('text', { x, y: 364 + 28 * i, ...staged(3, 0.1, 'sub') }, svg, t));
+    };
+    explicacao(X0, 'Multiplicações por pesos',
+      ['atenção + MLP: podem aproveitar a poda'], 'aceleravel');
+    explicacao(880, 'Sem ganho direto com a poda',
+      ['atenção entre tokens, normalizações,', 'ativações e amostragem: sem pesos podados'], '');
+    add('path', { d: `M${X0} 414V568`, ...staged(3, 0, 'eixo') });
+    linha({ s: 3, y: 422, nome: 'LLM antes', sub: '', fim: '100%',
+      seg: [[0.6, 'util', 'aceleráveis: 60%'], [0.4, 'resto', 'resto: 40%']] });
+    const x70 = linha({ s: 3, y: 510, nome: 'LLM depois', sub: 'os 60% ficam 2× mais rápidos', fim: '70%', d0: 0.9,
+      seg: [[0.3, 'util', '30%'], [0.4, 'resto', '40%']] });
+    tex(x70 + 110, 506, 1360 - x70 - 110, 64, String.raw`\frac{1}{0{,}7} \approx 1{,}43\times`, 4, 0, 'res');
+    const med = add('text', { x: X0, y: 622, ...staged(4, 0.6, 'medido') });
+    add('tspan', {}, med, 'medido (LLaMA-7B com 2:4, ponta a ponta): ');
+    add('tspan', { class: 'num' }, med, '1,24×');
+  })();
+  </script>
+  <script>
+  (() => {
+    const W = 1600, H = 900, ZOOM_MIN = 0.5, ZOOM_MAX = 2.5, ZOOM_STEP = 0.1;
+    const slides = [...document.querySelectorAll('.slide')];
+    const frame = document.getElementById('stage-frame');
+    const stage = document.getElementById('stage');
+    const panel = document.getElementById('indice');
+    const toggle = document.getElementById('menu-toggle');
+    const list = document.getElementById('index-list');
+    const stepDots = document.getElementById('step-dots');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = -1;
+    let step = 0;
+    let zoom = 1;
+    try { localStorage.removeItem('mb-zoom'); } catch {}
+
+    // Índice gerado a partir dos títulos dos slides.
+    const numero = (slide, i) => slide.dataset.num !== undefined ? Number(slide.dataset.num) : i;
+    slides.forEach((slide, i) => {
+      const li = document.createElement('li');
+      li.value = numero(slide, i);
+      const a = document.createElement('a');
+      a.href = '#' + slide.id;
+      a.textContent = slide.dataset.title;
+      a.addEventListener('click', () => setMenu(false));
+      li.append(a);
+      list.append(li);
+    });
+
+    function fit() {
+      const scale = Math.min(innerWidth / W, innerHeight / H) * zoom;
+      stage.style.transform = `scale(${scale})`;
+      frame.style.width = W * scale + 'px';
+      frame.style.height = H * scale + 'px';
+    }
+
+    function setZoom(value) {
+      zoom = Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value)) * 10) / 10;
+      fit();
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    const stepsOf = slide => Number(slide.dataset.steps || 0);
+
+    // Numeração do planejamento (Semana 8 - keyword.md): capa = 00, slides 1 a 12 com o número do
+    // plano (data-num; um item dividido em duas páginas repete o número). Total em data-total.
+    const total = Number(stage.dataset.total) || slides.length - 1;
+    slides.forEach((slide, i) => {
+      const num = numero(slide, i);
+      const counter = document.createElement('span');
+      counter.className = 'counter';
+      counter.textContent = `${num ? pad(num) : '0'} / ${pad(total)}`;
+      counter.setAttribute('aria-label', `Página ${num} de ${total}`);
+      slide.append(counter);
+    });
+
+    // Etapas cumulativas: a classe sN mostra os elementos da etapa N; nowN dispara os destaques
+    // só da etapa recém-alcançada. Sem animação (voltar, movimento reduzido), tudo aparece pronto.
+    function setStep(slide, n, animate) {
+      slide.classList.toggle('instant', !animate);
+      for (let k = 1; k <= stepsOf(slide); k++) {
+        slide.classList.toggle('s' + k, k <= n);
+        slide.classList.toggle('now' + k, animate && k === n);
+      }
+      step = n;
+      stepDots.innerHTML = stepsOf(slide) > 1
+        ? Array.from({ length: stepsOf(slide) }, (_, k) => `<i${k < n ? ' class="on"' : ''}></i>`).join('') : '';
+    }
+
+    // Ao entrar: vídeos reiniciam, zoom volta a 100% e a primeira etapa é animada
+    // (ou o quadro completo, ao voltar de um slide seguinte).
+    function go(index, atEnd = false) {
+      index = Math.min(slides.length - 1, Math.max(0, index));
+      if (index === current) return;
+      if (current >= 0) setZoom(1);
+      current = index;
+      slides.forEach((slide, i) => {
+        const active = i === current;
+        slide.classList.toggle('active', active);
+        slide.setAttribute('aria-hidden', String(!active));
+        slide.querySelectorAll('video').forEach(video => {
+          if (active && !reduceMotion) { video.currentTime = 0; video.play().catch(() => {}); }
+          else video.pause();
+        });
+      });
+      const slide = slides[current];
+      if (atEnd || reduceMotion) setStep(slide, stepsOf(slide), false);
+      else {
+        setStep(slide, 0, false);
+        void slide.getBoundingClientRect();
+        setStep(slide, Math.min(1, stepsOf(slide)), true);
+      }
+      list.querySelectorAll('a').forEach((a, i) => a.toggleAttribute('aria-current', i === current));
+      const hash = '#' + slide.id;
+      if (location.hash !== hash) history.replaceState(null, '', hash);
+    }
+
+    function next() {
+      const slide = slides[current];
+      if (step < stepsOf(slide)) setStep(slide, step + 1, !reduceMotion);
+      else go(current + 1);
+    }
+
+    function prev() {
+      if (step > 1) setStep(slides[current], step - 1, false);
+      else go(current - 1, true);
+    }
+
+    function fromHash() {
+      const i = slides.findIndex(s => '#' + s.id === location.hash);
+      go(i < 0 ? 0 : i);
+    }
+
+    function setMenu(open) {
+      panel.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Fechar índice' : 'Abrir índice');
+      toggle.classList.toggle('open', open);
+    }
+
+    toggle.addEventListener('click', () => setMenu(panel.hidden));
+    document.getElementById('print-pdf').addEventListener('click', () => print());
+    document.getElementById('zoom-in').addEventListener('click', () => setZoom(zoom + ZOOM_STEP));
+    document.getElementById('zoom-out').addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
+    addEventListener('resize', fit);
+    addEventListener('hashchange', fromHash);
+    addEventListener('keydown', event => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const key = event.key;
+      if ((key === ' ' || key === 'Enter') && event.target.closest('button, a')) return;
+      if (key === 'Escape') setMenu(false);
+      else if (key === '+' || key === '=') setZoom(zoom + ZOOM_STEP);
+      else if (key === '-') setZoom(zoom - ZOOM_STEP);
+      else if (key === '0') setZoom(1);
+      else if (['ArrowRight', ' ', 'Enter'].includes(key)) next();
+      else if (key === 'ArrowLeft') prev();
+      else if (key === 'PageDown') go(current + 1);
+      else if (key === 'PageUp') go(current - 1, true);
+      else if (key === 'Home') go(0);
+      else if (key === 'End') go(slides.length - 1, true);
+      else return;
+      event.preventDefault();
+    });
+
+    fit();
+    fromHash();
+  })();
+  </script>
+</body>
+</html>

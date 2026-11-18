@@ -1,0 +1,544 @@
+:root {
+  color-scheme: dark;
+  font-family: Arial, sans-serif;
+  --bg: #101117;
+  --ink: #eeeef2;
+  --muted: #b4b6c4;
+  --line: #b4b6c426;
+  --blue: #58c4dd;
+  --purple: #9a72d8;
+  --yellow: #f4ce72;
+  --purple-text: #b9a0ee;
+  --red: #fc6255;
+  --green: #83c167;
+  --speed: 1.25;
+  background: var(--bg);
+  color: var(--muted);
+}
+* { box-sizing: border-box; }
+body { margin: 0; min-height: 100vh; background: var(--bg); }
+header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 24px;
+  border-bottom: 1px solid var(--line);
+}
+a { color: var(--blue); text-underline-offset: 4px; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--blue); outline-offset: 4px; }
+.empty-state { margin: 0; padding: 64px 24px; text-align: center; }
+
+/* Apresentação: palco 1600 × 900 escalado para caber na janela. */
+.deck { overflow: hidden; height: 100vh; }
+.viewport {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  overflow: auto;
+}
+.stage-frame { position: relative; margin: auto; flex: none; }
+.stage {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 1600px;
+  height: 900px;
+  transform-origin: 0 0;
+}
+.slide {
+  position: absolute;
+  inset: 0;
+  padding: 96px 120px 72px;
+  display: flex;
+  flex-direction: column;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .45s ease, visibility 0s .45s;
+}
+.slide.active { opacity: 1; visibility: visible; transition: opacity .45s ease; }
+
+/* Controles fixos: índice à esquerda, etapas, PDF e zoom à direita. */
+.toolbar {
+  position: fixed;
+  z-index: 3;
+  inset: 16px 16px auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  pointer-events: none;
+}
+.toolbar > * { pointer-events: auto; }
+.toolbar-group { display: flex; align-items: center; gap: 8px; }
+.step-dots { display: flex; gap: 6px; margin-right: 4px; }
+.step-dots i { width: 7px; height: 7px; border-radius: 50%; background: var(--line); transition: background .2s; }
+.step-dots i.on { background: var(--blue); }
+/* Dentro do slide para manter posição e numeração também no PDF. */
+.counter {
+  position: absolute;
+  right: 120px;
+  bottom: 28px;
+  font-size: 24px;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+}
+.icon-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #181a22cc;
+  color: var(--ink);
+  font: 22px/1 Arial, sans-serif;
+  cursor: pointer;
+  transition: border-color .2s, background .2s;
+}
+.icon-button:hover { border-color: var(--blue); background: #58c4dd1a; }
+.burger { display: grid; gap: 4px; width: 18px; }
+.burger span { height: 2px; background: currentColor; border-radius: 2px; transition: transform .25s, opacity .25s; }
+.open .burger span:nth-child(1) { transform: translateY(6px) rotate(45deg); }
+.open .burger span:nth-child(2) { opacity: 0; }
+.open .burger span:nth-child(3) { transform: translateY(-6px) rotate(-45deg); }
+
+.index-panel {
+  position: fixed;
+  z-index: 2;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: min(360px, 100vw);
+  padding: 72px 24px 24px;
+  background: #15161e;
+  border-right: 1px solid var(--line);
+  box-shadow: 12px 0 40px #0008;
+  overflow-y: auto;
+  animation: slide-in .25s ease;
+}
+@keyframes slide-in { from { transform: translateX(-24px); opacity: 0; } }
+.index-title { margin: 0 0 12px; font-size: 13px; letter-spacing: .12em; text-transform: uppercase; }
+.index-panel ol { margin: 0 0 24px; padding-left: 24px; display: grid; gap: 4px; }
+.index-panel li::marker { color: var(--muted); }
+.index-panel ol a { display: block; padding: 8px 10px; border-radius: 8px; color: var(--ink); text-decoration: none; }
+.index-panel ol a:hover { background: #ffffff0d; }
+.index-panel ol a[aria-current] { background: #58c4dd1f; color: var(--blue); }
+.index-lab { display: inline-block; padding: 8px 10px; }
+
+/* Slide 1: capa. */
+.cover { align-items: center; text-align: center; justify-content: center; gap: 0; }
+.kicker {
+  margin: 0 0 20px;
+  color: var(--blue);
+  font-size: 22px;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+}
+.cover h1 { margin: 0; color: var(--ink); font-size: 104px; line-height: 1.02; letter-spacing: -.02em; }
+.hl { color: var(--yellow); }
+.lede { margin: 24px 0 0; font-size: 38px; line-height: 1.45; }
+.lede strong { color: var(--ink); }
+.lede em { color: var(--yellow); font-style: normal; }
+.band { margin: 32px 0 0; width: 1360px; height: 400px; }
+.band video, .band img, .band svg { width: 100%; height: 100%; display: block; }
+.print-only { display: none !important; }
+.lab-button {
+  margin-top: 28px;
+  padding: 16px 30px;
+  border: 1.5px solid var(--blue);
+  border-radius: 999px;
+  background: #58c4dd14;
+  color: var(--blue);
+  font-size: 24px;
+  text-decoration: none;
+  transition: background .2s, color .2s, transform .2s;
+}
+.lab-button span { display: inline-block; transition: transform .2s; }
+/* Entrada em sequência dos elementos da capa. */
+.slide.active .kicker, .slide.active h1, .slide.active .lede, .slide.active .band, .slide.active .lab-button {
+  animation: rise .7s cubic-bezier(.2, .7, .2, 1) both;
+}
+.slide.active h1 { animation-delay: .08s; }
+.slide.active .lede { animation-delay: .2s; }
+.slide.active .band { animation-delay: .32s; }
+.slide.active .lab-button { animation-delay: .44s; }
+@keyframes rise { from { opacity: 0; transform: translateY(18px); } }
+
+/* Slides de conteúdo: cabeçalho à esquerda e diagrama abaixo. */
+.slide-head { flex: none; display: block; padding: 0; border: 0; }
+.slide-head .kicker { margin-bottom: 12px; }
+.slide-head h2 { margin: 0; color: var(--ink); font-size: 56px; line-height: 1.1; letter-spacing: -.01em; }
+/* Exceção: título do plano longo demais para uma linha a 56 px. */
+.slide-head h2.longo { font-size: 44px; }
+.diagram { display: block; width: 1360px; height: auto; margin-top: auto; }
+
+/* Etapas: elementos com data-s ficam ocultos até a classe sN do slide. */
+.slide [data-s] {
+  opacity: 0;
+  transition-property: opacity, transform, stroke-dashoffset;
+  transition-duration: calc(.5s / var(--speed));
+  transition-timing-function: cubic-bezier(.2, .7, .2, 1);
+  transition-delay: calc(var(--d, 0) * 1s / var(--speed));
+}
+.slide.s1 [data-s="1"], .slide.s2 [data-s="2"], .slide.s3 [data-s="3"], .slide.s4 [data-s="4"],
+.slide.s5 [data-s="5"], .slide.s6 [data-s="6"], .slide.s7 [data-s="7"], .slide.s8 [data-s="8"] { opacity: 1; transform: none; stroke-dashoffset: 0; }
+.slide.instant :not(.loop), .slide.instant *::before, .slide.instant *::after { transition: none !important; animation: none !important; }
+/* Animações contínuas (.loop) só correm no slide ativo. */
+.slide:not(.active) .loop { animation-play-state: paused !important; }
+
+/* Estados iniciais com especificidade menor que a regra de etapa visível. */
+[data-s].slide-in { transform: translateX(-40px); }
+[data-s].rise { transform: translateY(12px); }
+[data-s].pop { transform: scaleY(.15); transform-box: fill-box; transform-origin: 50% 100%; }
+[data-s].flow { stroke-dasharray: 1; stroke-dashoffset: 1; }
+
+/* Slide 2: pruning × quantização. */
+#poda-quant text { text-anchor: middle; }
+#poda-quant .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#poda-quant .val { fill: var(--ink); font: 25px KaTeX_Main, serif; }
+#poda-quant .tinta { stroke: none; }
+#poda-quant .cel.zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .55; stroke-dasharray: 5 5; }
+#poda-quant .val.zero { fill: var(--yellow); fill-opacity: .8; }
+#poda-quant .val.arred { fill: var(--green); }
+#poda-quant .nome { fill: var(--ink); font: italic 44px KaTeX_Math, serif; }
+#poda-quant .seta { fill: none; stroke-width: 3; }
+#poda-quant .seta.poda { stroke: var(--yellow); }
+#poda-quant .seta.quant { stroke: var(--green); }
+#poda-quant .ponta { fill: context-stroke; }
+#poda-quant .rotulo { font-size: 32px; font-weight: bold; }
+#poda-quant .rotulo.poda { fill: var(--yellow); }
+#poda-quant .rotulo.quant { fill: var(--green); }
+#poda-quant .efeito { fill: var(--ink); font-size: 30px; text-anchor: start; }
+[data-s].pop-cel { transform: scale(.6); transform-box: fill-box; transform-origin: 50% 50%; }
+
+/* Slide 3: esparsidade. Matriz à esquerda, definição e conta à direita. */
+.esp-corpo { flex: 1; display: flex; align-items: center; justify-content: space-between; gap: 64px; padding: 24px 40px 8px; }
+#esp-matriz { width: 516px; height: 516px; flex: none; overflow: visible; }
+#esp-matriz text { text-anchor: middle; }
+#esp-matriz .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#esp-matriz .val { fill: var(--ink); font: 34px KaTeX_Main, serif; }
+#esp-matriz .tinta { stroke: none; }
+#esp-matriz .cel.zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .55; stroke-dasharray: 6 6; }
+#esp-matriz .val.zero { fill: var(--yellow); fill-opacity: .8; }
+.esp-formula { flex: 1; display: flex; flex-direction: column; align-items: flex-start; padding-left: 120px; color: var(--ink); font-size: 56px; }
+.esp-formula .katex-display { margin: 0; }
+.esp-nota {
+  position: relative;
+  margin: 56px 0 0;
+  padding: 14px 24px;
+  border: 2px dashed #f4ce7280;
+  border-radius: 18px;
+  background: #1b1a1c;
+  color: var(--muted);
+  font-size: 28px;
+  white-space: nowrap;
+}
+.esp-nota strong { color: var(--ink); font-weight: normal; }
+/* Ponta do balão, apontando para a conta acima. */
+.esp-nota::before {
+  content: "";
+  position: absolute;
+  top: -13px;
+  left: 64px;
+  width: 22px;
+  height: 22px;
+  border-top: 2px dashed #f4ce7280;
+  border-left: 2px dashed #f4ce7280;
+  background: #1b1a1c;
+  transform: rotate(45deg);
+}
+.esp-nota[data-s] { transform: translateY(10px); }
+
+
+/* Slide 5: padrões de esparsidade. */
+#padroes text { text-anchor: middle; }
+#padroes .nome { fill: var(--ink); font-size: 34px; font-weight: bold; }
+#padroes .def { fill: var(--blue); font-size: 26px; }
+#padroes .def .math-def { font: italic 28px KaTeX_Math, serif; }
+#padroes .desc { fill: var(--muted); font-size: 28px; }
+#padroes .desc .math-d { font: italic 30px KaTeX_Math, serif; }
+#padroes .desc .num-d { font: 30px KaTeX_Main, serif; }
+#padroes .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#padroes .cel.zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .5; stroke-dasharray: 4 4; }
+#padroes .peso { fill: var(--blue); }
+#padroes .peso.neg { fill: var(--purple); }
+#padroes .grupo { fill: none; stroke: var(--ink); stroke-opacity: .5; stroke-width: 2; }
+#padroes .chave { fill: none; stroke: var(--muted); stroke-width: 2; }
+#padroes .total { fill: var(--yellow); }
+#padroes .math { font: italic 36px KaTeX_Math, serif; }
+#padroes .num { font: 36px KaTeX_Main, serif; }
+
+/* Slide 6: poda por magnitude. */
+#magnitude text { text-anchor: middle; }
+#magnitude .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#magnitude .val { fill: var(--ink); font: 32px KaTeX_Main, serif; }
+#magnitude .nome { fill: var(--ink); font: italic 44px KaTeX_Math, serif; }
+#magnitude .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .55; stroke-width: 1.5; stroke-dasharray: 5 5; }
+#magnitude .val.zero { fill: var(--yellow); fill-opacity: .8; stroke: none; }
+#magnitude .eixo { fill: none; stroke: var(--muted); stroke-opacity: .6; stroke-width: 2; }
+#magnitude .rot-eixo { text-anchor: end; fill: var(--ink); }
+#magnitude .math { font: italic 34px KaTeX_Math, serif; }
+#magnitude .num { font: 34px KaTeX_Main, serif; }
+#magnitude .limiar { fill: none; stroke: var(--yellow); stroke-width: 2.5; stroke-dasharray: 10 8; }
+#magnitude .tau, #magnitude .regra { fill: var(--yellow); }
+#magnitude .tau { text-anchor: end; }
+#magnitude .regra { text-anchor: start; }
+#magnitude .aviso { fill: var(--ink); font-size: 30px; text-anchor: start; }
+#magnitude .aviso-seta { fill: none; stroke: var(--red); stroke-width: 2.5; }
+#magnitude .ponta-aviso { fill: var(--red); }
+[data-s].voa { transform: translate(var(--dx), var(--dy)) scale(2.2); transform-box: fill-box; transform-origin: 50% 50%; }
+#magnitude [data-s].voa { transition-duration: calc(.8s / var(--speed)); }
+
+/* Slide 5: Wanda, peso pequeno × ativação grande. */
+#wanda text { text-anchor: middle; fill: var(--ink); }
+#wanda .math { font: italic 36px KaTeX_Math, serif; }
+#wanda .num { font: 36px KaTeX_Main, serif; }
+#wanda .num.sub { font-size: 25px; }
+#wanda .txt { font: 32px Arial, sans-serif; }
+#wanda .no { fill: #181a22; stroke: var(--ink); stroke-width: 2.5; }
+#wanda .rot-no .math { font-size: 40px; }
+#wanda .aresta { fill: none; stroke: var(--blue); stroke-linecap: round; transition: opacity calc(.5s / var(--speed)), stroke-width calc(.9s / var(--speed)) cubic-bezier(.4, 0, .2, 1); }
+#wanda .aresta.a1 { stroke-width: 16px; }
+#wanda .aresta.a2 { stroke-width: 2px; }
+.slide.s3 #wanda .aresta.a1 { stroke-width: 4.8px; }
+.slide.s3 #wanda .aresta.a2 { stroke-width: 24px; }
+#wanda .brilho { fill: var(--ink); fill-opacity: .1; stroke: var(--ink); stroke-opacity: .35; stroke-width: 2; }
+#wanda .brilho.forte { fill-opacity: .2; stroke-opacity: .7; }
+#wanda .ativ.forte .num { font-weight: bold; }
+#wanda .contrib, #wanda .veredito { text-anchor: start; }
+#wanda .barra-c { fill: var(--blue); fill-opacity: .8; }
+[data-s].cresce { transform: scaleX(0); transform-box: fill-box; transform-origin: 0 50%; }
+#wanda .perda { fill: none; stroke-width: 3; stroke-dasharray: 8 6; }
+#wanda .perda.mag { stroke: var(--red); }
+#wanda .perda.wanda { stroke: var(--yellow); }
+#wanda .veredito.mag tspan { fill: var(--red); }
+#wanda .veredito.wanda tspan { fill: var(--yellow); }
+
+/* Slide 6: a equação de importância do Wanda, numa rede com 2 entradas. */
+#wanda-eq text { fill: var(--ink); text-anchor: middle; }
+#wanda-eq .html div { color: var(--ink); font-size: 34px; line-height: 1.2; white-space: nowrap; }
+#wanda-eq .centro { text-align: center; }
+#wanda-eq .eq div { font-size: 64px; }
+#wanda-eq .no { fill: #181a22; stroke: var(--ink); stroke-width: 2.5; }
+#wanda-eq .no-rot div { font-size: 30px; }
+#wanda-eq .nome-no { font: 24px Arial, sans-serif; fill: var(--muted); }
+#wanda-eq .aresta { fill: none; stroke: var(--blue); stroke-linecap: round; }
+#wanda-eq .apaga { fill: none; stroke: var(--bg); stroke-width: 20px; }
+#wanda-eq .aresta-zero { fill: none; stroke: var(--yellow); stroke-width: 3; stroke-dasharray: 10 8; }
+#wanda-eq .rot-w div { font-size: 30px; }
+#wanda-eq .nome-fo div { color: var(--muted); font: 24px Arial, sans-serif; }
+#wanda-eq .nome-fo .katex { color: var(--ink); }
+#wanda-eq .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#wanda-eq .ativ { fill: var(--purple); }
+#wanda-eq .val { font: 24px KaTeX_Main, serif; }
+#wanda-eq .norma div { font-size: 30px; }
+#wanda-eq .fluxo { fill: none; stroke: var(--muted); stroke-width: 2.5; }
+#wanda-eq .ponta { fill: var(--muted); }
+#wanda-eq .conta div { font-size: 38px; }
+#wanda-eq .nota-fo .nota { padding: 12px 20px; border: 2px dashed #f4ce7280; border-radius: 16px; background: #1b1a1c; color: var(--muted); font: 26px/1.45 Arial, sans-serif; white-space: normal; }
+#wanda-eq .nota .am { color: var(--yellow); }
+#wanda-eq .nota .katex { color: var(--ink); }
+
+/* Slide 8: SparseGPT. */
+#sparsegpt text { text-anchor: middle; fill: var(--ink); }
+#sparsegpt .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#sparsegpt .val { font: 30px KaTeX_Main, serif; }
+#sparsegpt .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .55; stroke-width: 1.5; stroke-dasharray: 5 5; }
+#sparsegpt .val.zero { fill: var(--yellow); fill-opacity: .8; stroke: none; }
+#sparsegpt .ajuste { fill: var(--green); fill-opacity: .16; stroke: var(--green); stroke-width: 2; }
+#sparsegpt .val.ajustado { fill: var(--green); }
+#sparsegpt foreignObject div { color: var(--ink); font-size: 36px; line-height: 1.2; }
+#sparsegpt .tex-nome div { font-size: 42px; }
+#sparsegpt .tex-erro div { font-size: 30px; }
+#sparsegpt .tex-erro.poda div { color: var(--red); }
+#sparsegpt .tex-erro.comp div { color: var(--green); }
+#sparsegpt .eixo { stroke: var(--muted); stroke-opacity: .6; stroke-width: 2; }
+#sparsegpt .nota { font-size: 28px; fill: var(--muted); }
+#sparsegpt .leg { font-size: 30px; text-anchor: start; }
+#sparsegpt .barra.orig { fill: var(--ink); fill-opacity: .16; stroke: var(--ink); stroke-opacity: .6; stroke-width: 2; }
+#sparsegpt .tex-graf div { font-size: 30px; color: var(--muted); text-align: center; }
+#sparsegpt .barra.poda { fill: var(--red); fill-opacity: .85; }
+#sparsegpt .barra.comp { fill: var(--green); fill-opacity: .9; }
+[data-s].sobe { transform: scaleY(0); transform-box: fill-box; transform-origin: 50% 100%; }
+[data-s].desce { transform: scaleY(0); transform-box: fill-box; transform-origin: 50% 0; }
+
+/* Slide 9: algoritmo do SparseGPT. */
+#sparsegpt-alg text { fill: var(--ink); }
+#sparsegpt-alg .num-etapa { fill: none; stroke: var(--blue); stroke-width: 2.5; }
+#sparsegpt-alg .n-etapa { fill: var(--blue); font: bold 26px Arial, sans-serif; text-anchor: middle; }
+#sparsegpt-alg .tit-etapa { font: bold 32px Arial, sans-serif; }
+#sparsegpt-alg .corpo-etapa div { color: var(--muted); font: 26px/1.3 Arial, sans-serif; white-space: nowrap; }
+#sparsegpt-alg .corpo-etapa .am { color: var(--yellow); }
+#sparsegpt-alg .corpo-etapa .vd { color: var(--green); }
+#sparsegpt-alg .corpo-etapa .f { display: inline-block; vertical-align: middle; margin-right: 20px; }
+#sparsegpt-alg .corpo-etapa .katex { color: var(--ink); font-size: 1.15em; }
+#sparsegpt-alg .corpo-etapa .f .katex { font-size: 1.3em; }
+#sparsegpt-alg .rot-mat div { color: var(--ink); font-size: 30px; text-align: right; }
+#sparsegpt-alg .rot-mat .rot-bloco { color: var(--muted); font: 22px Arial, sans-serif; text-align: center; }
+#sparsegpt-alg .rot-mat .rot-bloco .katex { color: var(--ink); }
+#sparsegpt-alg .ativ { fill: var(--ink); }
+#sparsegpt-alg .diag { fill: var(--ink); }
+#sparsegpt-alg .liga { fill: none; stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#sparsegpt-alg .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#sparsegpt-alg .sep-bloco { stroke: var(--muted); stroke-opacity: .7; stroke-width: 2; stroke-dasharray: 6 6; }
+#sparsegpt-alg .chave { fill: none; stroke: var(--muted); stroke-width: 2; }
+#sparsegpt-alg .marca { fill: none; stroke: var(--yellow); stroke-width: 3; stroke-dasharray: 6 4; }
+#sparsegpt-alg .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .55; stroke-width: 1.5; stroke-dasharray: 5 5; }
+#sparsegpt-alg .ajustado { fill: var(--green); fill-opacity: .12; stroke: var(--green); stroke-width: 2.5; }
+/* Bloco de Bs colunas: só na etapa 3 (seleção). */
+.slide.s4 #sparsegpt-alg .so-s3 { opacity: 0; }
+#sparsegpt-alg .coluna { fill: var(--blue); fill-opacity: .08; stroke: var(--blue); stroke-width: 2.5; }
+#sparsegpt-alg .seta-comp { fill: none; stroke: var(--green); stroke-width: 3; }
+#sparsegpt-alg .ponta-comp { fill: var(--green); }
+
+/* Slide 7: Wanda aplicado ao LLM, camada a camada. */
+#wanda-llm text { fill: var(--ink); }
+#wanda-llm .num-etapa { fill: none; stroke: var(--blue); stroke-width: 2.5; }
+#wanda-llm .n-etapa { fill: var(--blue); font: bold 26px Arial, sans-serif; text-anchor: middle; }
+#wanda-llm .tit-etapa { font: bold 32px Arial, sans-serif; }
+#wanda-llm .desc-etapa { fill: var(--muted); font: 26px Arial, sans-serif; }
+#wanda-llm .math { font: italic 30px KaTeX_Math, serif; fill: var(--ink); }
+#wanda-llm .num { font: 30px KaTeX_Main, serif; fill: var(--ink); }
+#wanda-llm .sub { font-size: 21px; }
+#wanda-llm .camada { fill: #181a22; stroke: var(--muted); stroke-opacity: .6; stroke-width: 2; }
+#wanda-llm .rot-camada { font: 24px Arial, sans-serif; text-anchor: middle; fill: var(--muted); }
+#wanda-llm .podada { fill: none; stroke: var(--yellow); stroke-width: 2.5; stroke-dasharray: 8 6; }
+#wanda-llm .token { fill: var(--ink); fill-opacity: .25; stroke: var(--ink); stroke-opacity: .5; }
+#wanda-llm .rot-peq { font: 22px Arial, sans-serif; fill: var(--muted); text-anchor: middle; }
+#wanda-llm .fluxo { fill: none; stroke: var(--muted); stroke-width: 2.5; }
+#wanda-llm .ponta { fill: var(--muted); }
+#wanda-llm .norma { fill: var(--ink); }
+#wanda-llm .escore { fill: var(--yellow); }
+#wanda-llm .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .6; stroke-width: 1.5; stroke-dasharray: 4 3; }
+#wanda-llm .rot-s, #wanda-llm .rot-norma { text-anchor: middle; }
+
+/* Slide 10: Wanda++ (RGS e RO). */
+#wandapp text { fill: var(--ink); }
+#wandapp .tex div { color: var(--ink); font-size: 32px; line-height: 1.2; }
+#wandapp .tex.centro div { text-align: center; }
+#wandapp .rot-bloco { font: 26px Arial, sans-serif; fill: var(--muted); }
+#wandapp .tex.grad div { color: var(--red); font-size: 30px; }
+#wandapp .tex.formula div { font-size: 34px; }
+#wandapp .tex.formula.ro div { color: var(--green); }
+#wandapp .tex.formula.g div { font-size: 30px; }
+#wandapp .bloco { fill: #14151c; stroke: var(--ink); stroke-opacity: .7; stroke-width: 2.5; }
+#wandapp .sub { fill: #181a22; stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; }
+#wandapp .rot-sub { font: 26px Arial, sans-serif; text-anchor: middle; fill: var(--muted); }
+#wandapp .peso { fill: var(--blue); }
+#wandapp .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .6; stroke-width: 1.5; stroke-dasharray: 4 3; }
+#wandapp .fluxo { fill: none; stroke: var(--muted); stroke-width: 2.5; }
+#wandapp .ponta { fill: var(--muted); }
+#wandapp .gradiente { fill: none; stroke: var(--red); stroke-width: 3; stroke-dasharray: 1; }
+#wandapp .ponta-g { fill: var(--red); }
+#wandapp .rot-grad { font: 28px Arial, sans-serif; text-anchor: middle; fill: var(--red); }
+#wandapp .rot-grad .math { font: italic 32px KaTeX_Math, serif; fill: var(--red); }
+#wandapp .rot-perda { font: 24px Arial, sans-serif; text-anchor: middle; fill: var(--red); }
+#wandapp .nota { font: 28px Arial, sans-serif; fill: var(--muted); }
+/* Balão tracejado (verde) sob a fórmula do RO, com a ponta para cima. */
+#wandapp .balao { position: relative; display: inline-block; margin-top: 14px; padding: 12px 22px; border: 2px dashed #83c16780; border-radius: 18px; background: #181c1a; color: var(--muted); font: 26px/1.4 Arial, sans-serif; white-space: nowrap; }
+#wandapp .balao strong { color: var(--green); font-weight: normal; }
+#wandapp .balao .katex { color: var(--ink); font-size: 1.1em; }
+#wandapp .balao.ciclo { display: block; width: fit-content; margin: 0 auto; padding: 10px 26px 4px; }
+#wandapp .balao.ciclo::before { display: none; }
+#wandapp .ciclo .passos { display: flex; align-items: center; gap: 14px; }
+#wandapp .ciclo .chip { padding: 2px 14px; border: 2px solid; border-radius: 10px; color: var(--ink); background: #14151c; }
+#wandapp .ciclo .chip.poda { border-color: #f4ce72aa; }
+#wandapp .ciclo .chip.retro { border-color: #fc6255aa; }
+#wandapp .ciclo .chip.otim { border-color: #83c167; color: var(--green); }
+#wandapp .ciclo .sb { color: var(--muted); font-size: 28px; }
+/* Linha de retorno em U, do último passo de volta ao primeiro (ponta à esquerda, para cima). */
+#wandapp .ciclo .volta { position: relative; height: 22px; margin: 4px 120px 16px 70px; border: 2px solid var(--muted); border-top: 0; border-radius: 0 0 12px 12px; text-align: center; }
+#wandapp .ciclo .volta::before { content: ""; position: absolute; left: -8px; top: -4px; border: 7px solid transparent; border-bottom: 10px solid var(--muted); border-top: 0; }
+#wandapp .ciclo .volta span { position: relative; top: 8px; padding: 0 12px; background: #181c1a; color: var(--muted); font-style: italic; font-size: 24px; }
+#wandapp .balao::before { content: ""; position: absolute; top: -13px; left: 64px; width: 22px; height: 22px; border-top: 2px dashed #83c16780; border-left: 2px dashed #83c16780; background: #181c1a; transform: rotate(45deg); }
+#wandapp .ajuste { fill: none; stroke: var(--green); stroke-width: 3; }
+#wandapp .seta-ro { fill: none; stroke: var(--green); stroke-width: 3; }
+#wandapp .ponta-ro { fill: var(--green); }
+
+/* Slide 11: 50% de pesos zerados = 50% menos trabalho? */
+#armazenamento text { fill: var(--ink); }
+#armazenamento .nome { font: italic 40px KaTeX_Math, serif; text-anchor: middle; }
+#armazenamento .cel { fill: #181a22; stroke: var(--line); stroke-width: 1.5; }
+#armazenamento .zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .6; stroke-width: 1.5; stroke-dasharray: 5 4; }
+#armazenamento .val { font: 22px KaTeX_Main, serif; text-anchor: middle; }
+#armazenamento .val.peq { font-size: 18px; }
+#armazenamento .val.zero-t, #armazenamento .mult-t.zero-t { fill: var(--yellow); fill-opacity: .85; }
+#armazenamento .titulo { font: bold 26px Arial, sans-serif; fill: var(--ink); }
+#armazenamento .conta { font: 28px Arial, sans-serif; fill: var(--ink); }
+#armazenamento .conta.mudo-t { fill: var(--muted); }
+#armazenamento .pior { fill: var(--red); }
+#armazenamento .conta.aviso { fill: var(--yellow); }
+#armazenamento .conta.melhor { fill: var(--green); }
+#armazenamento .pos { fill: #181a22; stroke: var(--purple); stroke-opacity: .7; stroke-width: 1.5; }
+#armazenamento .pos-t { font: 20px KaTeX_Main, serif; text-anchor: middle; fill: var(--purple-text); }
+#armazenamento .lado { font: 22px Arial, sans-serif; fill: var(--muted); }
+#armazenamento .lado.pos-l, #armazenamento .pos-c { fill: var(--purple-text); }
+#armazenamento .cab, #armazenamento .xj { font: italic 26px KaTeX_Math, serif; fill: var(--muted); }
+#armazenamento .xj.sub { font: 18px KaTeX_Main, serif; font-style: normal; }
+#armazenamento .xj.pos-c { fill: var(--purple-text); }
+#armazenamento .mult { fill: #181a22; stroke: var(--blue); stroke-opacity: .6; stroke-width: 1.5; }
+#armazenamento .mult-zero { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .7; stroke-width: 1.5; stroke-dasharray: 5 4; }
+#armazenamento .mult-esp { fill: #181c1a; stroke: var(--green); stroke-opacity: .8; stroke-width: 2; }
+#armazenamento .mult-t { font: 24px KaTeX_Main, serif; text-anchor: middle; fill: var(--ink); }
+#armazenamento .mult-t.esq { text-anchor: start; }
+
+/* Slide 12: por que 50% não dá 2×. */
+#velocidade text { fill: var(--ink); }
+#velocidade .nome { font: bold 28px Arial, sans-serif; }
+#velocidade .parte-titulo { font: bold 24px Arial, sans-serif; }
+#velocidade .parte-titulo.aceleravel { fill: var(--blue); }
+#velocidade .sub { font: 22px Arial, sans-serif; fill: var(--muted); }
+#velocidade .seg { stroke: var(--bg); stroke-width: 2; }
+#velocidade .seg.util { fill: #4aa6bd; }
+#velocidade .seg.zeros { fill: var(--bg); stroke: var(--yellow); stroke-opacity: .7; stroke-dasharray: 8 6; }
+#velocidade .seg.indice { fill: #8763bf; }
+#velocidade .seg.irregular { fill: #c4544a; }
+#velocidade .seg.resto { fill: #5d606e; }
+#velocidade .rot-seg { font: 22px Arial, sans-serif; text-anchor: middle; fill: var(--bg); }
+#velocidade .rot-seg.zeros { fill: var(--yellow); }
+#velocidade .rot-seg.resto { fill: var(--ink); }
+#velocidade .fim { font: 32px KaTeX_Main, serif; }
+#velocidade .eixo { stroke: var(--muted); stroke-width: 2; }
+#velocidade .ref { stroke: var(--muted); stroke-opacity: .5; stroke-width: 2; stroke-dasharray: 4 6; }
+#velocidade .ideal { stroke: var(--yellow); stroke-width: 2.5; stroke-dasharray: 10 8; }
+#velocidade .rot-ideal { font: 24px Arial, sans-serif; fill: var(--yellow); text-anchor: middle; }
+#velocidade .divisa { stroke: var(--line); stroke-width: 2; }
+#velocidade .tex div { color: var(--green); font-size: 38px; line-height: 1; }
+#velocidade .medido { font: 26px Arial, sans-serif; fill: var(--muted); }
+#velocidade .medido .num { font: 32px KaTeX_Main, serif; fill: var(--ink); }
+[data-s].cresce-x { transform: scaleX(0); transform-box: fill-box; transform-origin: 0 50%; }
+
+/* Slide 13: encerramento, com as três referências principais (cada uma com uma figura da obra). */
+.encerramento { padding-top: 64px; padding-bottom: 64px; }
+.encerramento h1 { font-size: 96px; }
+.refs { margin-top: 36px; }
+.refs-titulo { margin: 0 0 22px; color: var(--muted); font-size: 22px; font-weight: normal; letter-spacing: .16em; text-transform: uppercase; }
+.refs-lista { display: flex; gap: 36px; }
+.ref { width: 420px; display: flex; flex-direction: column; align-items: center; gap: 10px; color: var(--muted); text-decoration: none; }
+.ref-img { width: 100%; height: 210px; padding: 10px; display: grid; place-items: center; border-radius: 14px; background: #fff; border: 2px solid transparent; transition: border-color .2s; }
+.ref-img img { max-width: 100%; max-height: 100%; display: block; }
+.ref:hover .ref-img, .ref:focus-visible .ref-img { border-color: var(--blue); }
+.ref-nome { color: var(--ink); font-size: 22px; font-weight: bold; line-height: 1.3; }
+.ref-autor { font-size: 20px; }
+.encerramento .lab-button { margin-top: 36px; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}
+/* Impressão/PDF: um slide por página 16:9, com o quadro estático no lugar do vídeo. */
+@page { size: 1600px 900px; margin: 0; }
+@media print {
+  *, *::before, *::after { animation: none !important; transition: none !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  header, .empty-state, .toolbar, .index-panel { display: none; }
+  .deck { overflow: visible; height: auto; }
+  .viewport { overflow: visible; }
+  .viewport, .stage-frame, .stage { position: static; transform: none !important; width: auto !important; height: auto !important; }
+  .slide { position: relative; width: 1600px; height: 900px; opacity: 1; visibility: visible; break-after: page; }
+  .slide video { display: none; }
+  .print-only { display: block !important; }
+  #wanda .aresta.a1 { stroke-width: 4.8px; }
+  #wanda .aresta.a2 { stroke-width: 24px; }
+  .slide [data-s] { opacity: 1 !important; transform: none !important; stroke-dashoffset: 0 !important; }
+}
