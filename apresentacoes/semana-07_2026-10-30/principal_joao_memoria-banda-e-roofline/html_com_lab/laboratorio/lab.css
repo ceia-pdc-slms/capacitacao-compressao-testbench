@@ -1,0 +1,186 @@
+/* Laboratório: usa as cores e fontes de ../style.css (variáveis em :root). */
+/* Foco visível em todos os controles operáveis pelo teclado. */
+.lab input:focus-visible, .lab summary:focus-visible {
+  outline: 3px solid var(--blue);
+  outline-offset: 3px;
+}
+.lab {
+  /* Três tamanhos de texto (títulos à parte): secundário, corpo e destaque. Nos SVGs, 22 unidades
+     para texto e 24 para símbolos matemáticos. */
+  --fs-sm: 16px;
+  --fs-md: 20px;
+  --fs-lg: 24px;
+  font-size: var(--fs-md); line-height: 1.5; color: var(--muted);
+}
+.lab h1, .lab h2, .lab h3 { color: var(--ink); line-height: 1.15; margin: 0; }
+.lab h1 { font-size: clamp(36px, 5vw, 60px); letter-spacing: -.01em; }
+.lab h2 { font-size: clamp(28px, 3.4vw, 42px); }
+.lab h3 { font-size: var(--fs-lg); }
+.lab .kicker { margin: 0 0 10px; font-size: var(--fs-sm); }
+
+/* Barra superior: volta à apresentação e nome da página. */
+.lab-top {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 24px;
+  padding: 12px 24px;
+  background: #101117f2;
+  border-bottom: 1px solid var(--line);
+  backdrop-filter: blur(6px);
+}
+/* Anula o estilo genérico de <header> de ../style.css. */
+.lab .exp-head { display: grid; gap: 4px; padding: 0; border: 0; }
+.lab-top { justify-content: flex-start; }
+.lab-back { font-size: var(--fs-md); text-decoration: none; white-space: nowrap; }
+.lab .lab-title { font-size: var(--fs-md); font-weight: normal; color: var(--muted); }
+
+.lab-main { max-width: 1400px; margin: 0 auto; padding: 40px 24px 64px; }
+.lab-view { display: grid; gap: 28px; scroll-margin-top: 90px; }
+.lab-sep { margin: 56px 0 40px; border: 0; border-top: 1px solid var(--line); }
+
+/* Cada parte: pergunta → visualização + controles → indicadores e equação → detalhes. */
+.question { margin: 8px 0 0; max-width: 60ch; color: var(--ink); font-size: var(--fs-lg); }
+.exp-body { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 24px; align-items: start; }
+@media (max-width: 1000px) { .exp-body { grid-template-columns: 1fr; } }
+.exp-visual { margin: 0; padding: 16px; border: 1px solid var(--line); border-radius: 18px; background: #ffffff04; }
+.exp-visual svg { display: block; width: 100%; height: auto; }
+.exp-visual.placeholder { display: grid; place-items: center; min-height: 320px; border-style: dashed; text-align: center; }
+.exp-side { display: grid; gap: 16px; }
+
+.exp-controls { margin: 0; padding: 18px; border: 1px solid var(--line); border-radius: 14px; display: grid; gap: 14px; }
+.exp-controls legend { padding: 0 6px; color: var(--ink); font-size: var(--fs-md); }
+.hint { margin: 0; font-size: var(--fs-sm); }
+.buttons { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn {
+  padding: 10px 18px;
+  border: 1.5px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink);
+  font: var(--fs-md) Arial, sans-serif;
+  cursor: pointer;
+}
+.btn:hover { border-color: var(--blue); }
+.btn.primary { border-color: var(--blue); background: #58c4dd1a; color: var(--blue); }
+
+.indicators { margin: 0; display: grid; gap: 12px; }
+.indicators dt { font-size: var(--fs-sm); }
+.indicators dd { margin: 0; color: var(--ink); font-size: var(--fs-lg); font-weight: bold; font-variant-numeric: tabular-nums; }
+.indicators .destaque dd { color: var(--yellow); font-size: var(--fs-lg); }
+/* Faixa de resultados logo abaixo da visualização. */
+.indicators.strip { grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; }
+.indicators.strip dd { font-size: var(--fs-md); }
+.indicators.strip .destaque dd { font-size: var(--fs-lg); }
+.indicators.strip .ind { padding: 12px 16px; border: 1px solid var(--line); border-radius: 12px; background: #ffffff04; }
+.indicators small { display: block; color: var(--muted); font-size: var(--fs-sm); font-weight: normal; }
+
+/* Tabela de comparação (decode × prefill). */
+.compare { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.compare th, .compare td { padding: 8px 6px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.compare thead th { color: var(--ink); font-size: var(--fs-sm); }
+.compare tbody th { font-size: var(--fs-sm); font-weight: normal; white-space: nowrap; }
+.compare td { color: var(--ink); font-size: var(--fs-md); font-weight: bold; }
+.compare .num { text-align: right; white-space: nowrap; }
+.compare tr.destaque td { color: var(--yellow); font-size: var(--fs-lg); }
+.compare tr.nota td { color: var(--muted); font-size: var(--fs-sm); font-weight: normal; white-space: normal; }
+.compare tr:last-child th, .compare tr:last-child td { border-bottom: 0; }
+
+.btn:disabled { opacity: .45; cursor: not-allowed; }
+
+.exp-details { border: 1px solid var(--line); border-radius: 14px; }
+.exp-details summary { padding: 14px 18px; color: var(--blue); cursor: pointer; }
+.details-body { padding: 0 22px 12px; }
+.details-body li { margin-bottom: 8px; }
+.formula { font-size: var(--fs-lg); color: var(--ink); }
+
+/* Controles deslizantes com campo numérico. */
+.slider { display: grid; gap: 6px; }
+.slider label { color: var(--ink); font-size: var(--fs-md); }
+.slider-row { display: grid; grid-template-columns: minmax(0, 1fr) 88px 72px; align-items: center; gap: 8px; }
+.slider-row input[type=range] { width: 100%; accent-color: var(--blue); }
+.slider-row input[type=number] {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff08;
+  color: var(--ink);
+  font: bold var(--fs-md) Arial, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+.slider-row .unit { font-size: var(--fs-sm); white-space: nowrap; }
+.field-msg { margin: 0; color: var(--yellow); font-size: var(--fs-sm); }
+.field-msg:empty { display: none; }
+.slider-row input[aria-invalid="true"] { border-color: var(--yellow); }
+.btn.small { padding: 4px 12px; font-size: var(--fs-sm); margin-left: 6px; }
+.axis-note { margin-top: 8px; font-size: var(--fs-sm); text-align: center; }
+.formula.live { margin: 0; overflow-x: auto; }
+.activity { padding: 16px 20px; border: 1px solid var(--line); border-radius: 14px; }
+.activity ol { margin: 10px 0 0; padding-left: 24px; display: grid; gap: 8px; }
+.activity-log { margin: 10px 0 0; min-height: 1.5em; color: var(--yellow); font-weight: bold; }
+
+/* Gráfico Roofline. */
+#exp1-grafico { font-family: Arial, sans-serif; }
+#exp1-grafico text { text-anchor: middle; }
+#exp1-grafico .region.memoria { fill: var(--purple); fill-opacity: .1; }
+#exp1-grafico .region.calculo { fill: var(--blue); fill-opacity: .08; }
+#exp1-grafico .grid path { stroke: var(--muted); stroke-opacity: .14; stroke-width: 1; }
+#exp1-grafico .frame { fill: none; stroke: var(--muted); stroke-opacity: .5; stroke-width: 1.5; }
+#exp1-grafico .tick { fill: var(--muted); font-size: 22px; }
+#exp1-grafico .tick.y { text-anchor: end; }
+#exp1-grafico .axis-title { fill: var(--ink); font-size: 22px; font-weight: bold; }
+#exp1-grafico .ext { fill: none; stroke-width: 2; stroke-dasharray: 6 8; stroke-opacity: .35; }
+#exp1-grafico .ext.banda, #exp1-grafico .roof.banda { stroke: var(--purple-text); }
+#exp1-grafico .ext.pico, #exp1-grafico .roof.pico { stroke: var(--blue); }
+#exp1-grafico .roof { fill: none; stroke-width: 5; stroke-linecap: round; }
+#exp1-grafico .transition { stroke: var(--ink); stroke-opacity: .55; stroke-width: 2; stroke-dasharray: 4 6; }
+#exp1-grafico .transition-label { fill: var(--ink); font-size: 22px; paint-order: stroke; stroke: var(--bg); stroke-width: 6px; }
+#exp1-grafico .math { font: italic 24px KaTeX_Math, serif; }
+#exp1-grafico .region-label { font-size: 22px; font-weight: bold; }
+#exp1-grafico .region-label.memoria, #exp1-grafico .line-label.banda { fill: var(--purple-text); }
+#exp1-grafico .region-label.calculo, #exp1-grafico .line-label.pico { fill: var(--blue); }
+#exp1-grafico .line-label { font-size: 22px; font-weight: bold; }
+#exp1-grafico .guide { stroke: var(--yellow); stroke-opacity: .6; stroke-width: 1.5; stroke-dasharray: 3 5; }
+#exp1-grafico .preset circle { fill: var(--bg); stroke: var(--muted); stroke-width: 2.5; }
+#exp1-grafico .preset text { fill: var(--muted); font-size: 22px; }
+#exp1-grafico .point { fill: var(--yellow); stroke: var(--bg); stroke-width: 3; }
+#exp1-grafico .point-label { fill: var(--yellow); font-size: 22px; font-weight: bold; paint-order: stroke; stroke: var(--bg); stroke-width: 6px; }
+
+/* Parte 2: Tokens/s. */
+.details-body h4 { margin: 16px 0 8px; color: var(--ink); font-size: var(--fs-md); }
+.steps { padding-left: 24px; display: grid; gap: 6px; font-variant-numeric: tabular-nums; }
+.opcoes { display: grid; gap: 8px; }
+.opcoes-rotulo { margin: 0; color: var(--ink); }
+.btn[aria-pressed="true"] { border-color: var(--blue); background: var(--blue); color: var(--bg); font-weight: bold; }
+#tok-cena { font-family: Arial, sans-serif; }
+#tok-cena text { text-anchor: middle; }
+#tok-cena .row-label { fill: var(--ink); font-size: 22px; font-weight: bold; text-anchor: start; }
+#tok-cena .row-sub { fill: var(--muted); font-size: 22px; text-anchor: start; }
+#tok-cena .track { fill: #ffffff08; }
+#tok-cena .seg.pesos { fill: var(--purple); }
+#tok-cena .seg.kv { fill: var(--blue); }
+#tok-cena .seg.tempo { fill: var(--yellow); }
+#tok-cena .seg-label { fill: var(--bg); font-size: 22px; font-weight: bold; }  /* texto escuro sobre o roxo: contraste ≥ 4,5:1 */
+#tok-cena .kv-label { fill: var(--blue); font-size: 22px; font-weight: bold; text-anchor: end; }
+#tok-cena .bar-value { fill: var(--ink); font-size: 22px; font-weight: bold; text-anchor: start; }
+#tok-cena .tick { fill: var(--muted); font-size: 22px; }
+#tok-cena .tick-line { stroke: var(--muted); stroke-opacity: .6; stroke-width: 1.5; }
+#tok-cena .resultado { fill: var(--ink);  /* cor definida em tokens.js, conforme a velocidade */ font-size: 44px; font-weight: bold; font-variant-numeric: tabular-nums; }
+#tok-cena .resultado-unidade { fill: var(--muted); font-size: 22px; }
+#tok-cena .gauge-track { fill: none; stroke: #ffffff12; stroke-width: 20; }
+#tok-cena .gauge-fill { fill: none; stroke-width: 20; }
+#tok-cena .gauge-tick { stroke: var(--muted); stroke-opacity: .6; stroke-width: 1.5; }
+#tok-cena .gauge-tick.major { stroke: var(--ink); stroke-opacity: .9; stroke-width: 3; }
+#tok-cena .gauge-needle { fill: var(--ink); }
+#tok-cena .gauge-hub { fill: var(--ink); stroke: var(--bg); stroke-width: 4; }
+
+@media (max-width: 640px) {
+  .lab { --fs-md: 18px; --fs-lg: 20px; }
+  .lab-main { padding: 24px 16px 48px; }
+  .lab-top { position: static; padding: 10px 16px; }
+}

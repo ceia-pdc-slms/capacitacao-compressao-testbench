@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101117">
+  <title>Memória e banda · Laboratório</title>
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../style.css?v=7">
+  <link rel="stylesheet" href="lab.css?v=22">
+</head>
+<body class="lab">
+  <header class="lab-top">
+    <a class="lab-back" href="../index.html">← Apresentação</a>
+    <h1 class="lab-title">Laboratório · memória e banda</h1>
+  </header>
+
+  <main class="lab-main">
+
+    <!-- Parte 1: Roofline -->
+    <section class="lab-view experiment" id="roofline" aria-labelledby="exp1-titulo">
+      <header class="exp-head">
+        <h2 id="exp1-titulo">Roofline: onde está o gargalo?</h2>
+        <p class="question">Quando uma operação é limitada pela largura de banda e quando é limitada pelo poder de cálculo?</p>
+      </header>
+      <div class="exp-body">
+        <figure class="exp-visual">
+          <svg id="exp1-grafico" viewBox="0 0 1000 700" role="img" aria-labelledby="exp1-grafico-desc"><desc id="exp1-grafico-desc"></desc></svg>
+        </figure>
+        <div class="exp-side">
+          <fieldset class="exp-controls">
+            <legend>Hardware hipotético</legend>
+            <div class="slider" data-param="bandaGBs">
+              <label for="exp1-banda">Largura de banda <span data-tex="B"></span></label>
+              <div class="slider-row"><input type="range" id="exp1-banda-range" min="50" max="2000" step="10" aria-label="Largura de banda"><input type="number" id="exp1-banda" step="any"><span class="unit">GB/s</span></div>
+              <p class="field-msg" aria-live="polite"></p>
+            </div>
+            <div class="slider" data-param="picoTFLOPs">
+              <label for="exp1-pico">Pico de cálculo <span data-tex="P_{\text{pico}}"></span></label>
+              <div class="slider-row"><input type="range" id="exp1-pico-range" min="5" max="40" step="1" aria-label="Pico de cálculo"><input type="number" id="exp1-pico" step="any"><span class="unit">TFLOP/s</span></div>
+              <p class="field-msg" aria-live="polite"></p>
+            </div>
+          </fieldset>
+          <fieldset class="exp-controls">
+            <legend>Operação</legend>
+            <div class="slider" data-param="intensidade">
+              <label for="exp1-intensidade">Intensidade aritmética <span data-tex="I"></span></label>
+              <div class="slider-row"><input type="range" id="exp1-intensidade-range" min="1" max="600" step="1" aria-label="Intensidade aritmética"><input type="number" id="exp1-intensidade" step="any"><span class="unit">FLOP/byte</span></div>
+              <p class="field-msg" aria-live="polite"></p>
+            </div>
+            <div class="buttons">
+              <button type="button" class="btn" id="exp1-preset-decode">Decode (ilustrativo)</button>
+              <button type="button" class="btn" id="exp1-preset-prefill">Prefill (ilustrativo)</button>
+            </div>
+            <div class="buttons"><button type="button" class="btn" id="exp1-reset">Reiniciar</button></div>
+          </fieldset>
+        </div>
+      </div>
+      <dl class="indicators strip" id="exp1-indicadores" aria-live="polite"></dl>
+      <p class="formula live" id="exp1-equacao" aria-hidden="true"></p>
+      <div class="activity">
+        <h3>Experimente</h3>
+        <ol>
+          <li>Com o decode (<span data-tex="I = 1"></span> FLOP/byte), dobre o pico de cálculo. <button type="button" class="btn small" id="exp1-dobrar-pico">× 2 TFLOP/s</button></li>
+          <li>Agora dobre a largura de banda. <button type="button" class="btn small" id="exp1-dobrar-banda">× 2 GB/s</button></li>
+          <li>Passe para o prefill e repita: qual dos dois ajuda agora?</li>
+          <li>Use Reiniciar, ponha <span data-tex="I"></span> na transição (100 FLOP/byte) e dobre só um dos dois.</li>
+        </ol>
+        <p class="activity-log" id="exp1-registro" aria-live="polite"></p>
+      </div>
+      <details class="exp-details">
+        <summary>Entenda este resultado</summary>
+        <div class="details-body">
+          <p>O desempenho de uma operação não passa de dois tetos: o pico de cálculo e o que a memória consegue alimentar.</p>
+          <p class="formula" data-tex="P_{\text{limite}} = \min\left(P_{\text{pico}},\ B \cdot I\right) \qquad I_{\text{transição}} = \frac{P_{\text{pico}}}{B}" data-display></p>
+          <ul>
+            <li>Unidades: <span data-tex="B"></span> em GB/s (<span data-tex="10^9"></span> bytes/s), <span data-tex="I"></span> em FLOP/byte e, portanto, <span data-tex="B \cdot I"></span> em GFLOP/s; <span data-tex="P_{\text{pico}}"></span> em TFLOP/s (<span data-tex="10^{12}"></span> FLOP/s).</li>
+            <li>Com eixos lineares, a reta da banda é <span data-tex="P = B \cdot I"></span>: sua inclinação é a própria banda <span data-tex="B"></span>. Mais banda deixa a reta mais íngreme e aproxima a transição da origem.</li>
+            <li>Na transição (<span data-tex="I = I_{\text{transição}}"></span>), os dois tetos coincidem: dobrar só a banda ou só o pico não muda o limite, porque o outro teto passa a limitar.</li>
+            <li>Abaixo de <span data-tex="I_{\text{transição}}"></span>, a operação é <strong>limitada pela memória</strong> (<em>memory-bound</em>): mais FLOP/s não mudam o limite. Acima, é <strong>limitada pelo cálculo</strong> (<em>compute-bound</em>): mais banda não muda o limite.</li>
+            <li>Os valores iniciais (200 GB/s e 20 TFLOP/s) são hipotéticos. As posições de decode (<span data-tex="I \approx 1"></span>, grandes projeções em FP16 com batch 1) e de prefill (<span data-tex="I = 512"></span>, um prompt longo) são <strong>ilustrativas</strong>: dependem do hardware, do tamanho do prompt e da operação analisada.</li>
+            <li>O Roofline é um modelo idealizado: ignora latência, overheads de lançamento de kernels, ocupação da GPU e os vários níveis de cache. GPUs reais têm mais de um teto (por exemplo, com e sem Tensor Cores).</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+    <hr class="lab-sep">
+
+    <!-- Parte 2: Tokens/s -->
+    <section class="lab-view experiment" id="tokens" aria-labelledby="tok-titulo">
+      <header class="exp-head">
+        <h2 id="tok-titulo">Tokens/s</h2>
+        <p class="question">Que parâmetros definem a velocidade de geração de tokens no decode?</p>
+      </header>
+      <div class="exp-body">
+        <figure class="exp-visual">
+          <svg id="tok-cena" viewBox="0 0 1000 760" role="img" aria-labelledby="tok-cena-desc"><desc id="tok-cena-desc"></desc></svg>
+        </figure>
+        <div class="exp-side">
+          <fieldset class="exp-controls">
+            <legend>Pythia-1B · batch 1</legend>
+            <div class="slider" data-param="bandaGBs">
+              <label for="tok-banda">Largura de banda <span data-tex="B"></span></label>
+              <div class="slider-row"><input type="range" id="tok-banda-range" min="50" max="2000" step="10" aria-label="Largura de banda"><input type="number" id="tok-banda" step="any"><span class="unit">GB/s</span></div>
+              <p class="field-msg" aria-live="polite"></p>
+            </div>
+            <div class="opcoes" role="group" aria-labelledby="tok-precisao-rotulo">
+              <p class="opcoes-rotulo" id="tok-precisao-rotulo">Precisão dos pesos</p>
+              <div class="buttons">
+                <button type="button" class="btn" data-precisao="fp16">FP16</button>
+                <button type="button" class="btn" data-precisao="int8">INT8</button>
+                <button type="button" class="btn" data-precisao="int4">4 bits</button>
+              </div>
+            </div>
+            <div class="slider" data-param="contexto">
+              <label for="tok-contexto">Contexto <span data-tex="n"></span> (KV cache)</label>
+              <div class="slider-row"><input type="range" id="tok-contexto-range" min="1" max="2048" step="1" aria-label="Contexto"><input type="number" id="tok-contexto" step="1"><span class="unit">posições</span></div>
+              <p class="field-msg" aria-live="polite"></p>
+            </div>
+            <div class="buttons"><button type="button" class="btn" id="tok-reset">Reiniciar</button></div>
+          </fieldset>
+        </div>
+      </div>
+      <details class="exp-details">
+        <summary>Entenda este resultado</summary>
+        <div class="details-body">
+          <p>No decode com batch 1, cada token novo exige ler da memória os pesos do modelo e o KV cache de todas as posições anteriores. O tempo dessa leitura limita a velocidade:</p>
+          <p class="formula" data-tex="\text{tokens/s} \;\le\; \frac{B}{\text{bytes por token}} \qquad \text{bytes por token} = N \cdot b + n \cdot k_{\text{KV}}" data-display></p>
+          <ul>
+            <li><span data-tex="B"></span>: largura de banda da memória (bytes/s). Dobrar a banda dobra o teto.</li>
+            <li><span data-tex="N"></span>: parâmetros lidos a cada token (908.759.040 no Pythia-1B) e <span data-tex="b"></span>: bytes por parâmetro (2 em FP16, 1 em INT8, 0,5 em 4 bits). Um modelo maior ou uma precisão maior leem mais bytes.</li>
+            <li><span data-tex="n"></span>: posições no contexto. O KV cache cresce com o contexto.</li>
+            <li><span data-tex="k_{\text{KV}}"></span>: bytes de K e V por posição, em todas as camadas: <span data-tex="2 \times 16 \times 8 \times 256 \times 2 = 131{.}072"></span> bytes (128 KiB) no Pythia-1B (K e V × 16 camadas × 8 cabeças × 256 dimensões × 2 bytes).</li>
+          </ul>
+          <p>O velocímetro usa escala logarítmica, de 10 a 10.000 tokens/s: dobrar a banda ou reduzir pela metade os bytes por token gira o ponteiro sempre o mesmo ângulo.</p>
+          <p>Com os valores atuais:</p>
+          <p class="formula live" id="tok-equacao" aria-hidden="true"></p>
+          <ol class="steps" id="tok-contas"></ol>
+          <h4>Hipóteses</h4>
+          <ul>
+            <li>Teto idealizado, não medição: cada peso é lido uma vez por token e o KV cache, uma vez por etapa; a banda é hipotética.</li>
+            <li>O embedding de entrada (206 MB em FP16) fica fora da conta: a cada token, só uma linha dele (4 KB) é lida.</li>
+            <li>O KV cache fica em FP16 em todas as precisões; a quantização é considerada sem o custo das escalas e da desquantização.</li>
+            <li>Sem ativações, outros buffers, caches de hardware nem overheads de kernels. Com várias sequências em lote (batch maior), os mesmos pesos servem a vários tokens por etapa e o total de tokens/s sobe.</li>
+          </ul>
+        </div>
+      </details>
+    </section>
+
+  </main>
+
+  <script src="../vendor/katex/katex.min.js"></script>
+  <script src="js/formato.js?v=1"></script>
+  <script src="js/ui.js?v=7"></script>
+  <script src="js/modelo.js?v=6"></script>
+  <script src="js/experimentos/roofline.js?v=12"></script>
+  <script src="js/experimentos/tokens.js?v=4"></script>
+  <script src="js/lab.js?v=5"></script>
+</body>
+</html>

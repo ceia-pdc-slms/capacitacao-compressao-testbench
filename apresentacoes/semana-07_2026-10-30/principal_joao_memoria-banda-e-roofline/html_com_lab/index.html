@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101117">
+  <title>Memória e banda · Apresentação</title>
+  <link rel="stylesheet" href="vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="style.css?v=30">
+</head>
+<body class="deck">
+  <nav class="toolbar" aria-label="Controles da apresentação">
+    <button class="icon-button" id="menu-toggle" type="button" aria-expanded="false" aria-controls="indice" aria-label="Abrir índice">
+      <span class="burger" aria-hidden="true"><span></span><span></span><span></span></span>
+    </button>
+    <div class="toolbar-group">
+      <span class="step-dots" id="step-dots" aria-hidden="true"></span>
+      <button class="icon-button" id="print-pdf" type="button" aria-label="Gerar PDF" title="Gerar PDF">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 4v11m-5-5 5 5 5-5M5 20h14"/></svg>
+      </button>
+      <button class="icon-button" id="zoom-out" type="button" aria-label="Diminuir zoom">−</button>
+      <button class="icon-button" id="zoom-in" type="button" aria-label="Aumentar zoom">+</button>
+    </div>
+  </nav>
+
+  <aside class="index-panel" id="indice" aria-label="Índice" hidden>
+    <p class="index-title">Índice</p>
+    <ol id="index-list"></ol>
+    <a class="index-lab" href="laboratorio/index.html?v=4">Laboratório →</a>
+  </aside>
+
+  <div class="viewport" id="viewport">
+    <div class="stage-frame" id="stage-frame">
+      <main class="stage" id="stage" aria-label="Apresentação">
+
+        <section class="slide cover" id="slide-1" data-title="Por que o decode é lento?">
+          <p class="kicker">Memória e banda · o roofline</p>
+          <h1>Por que o <span class="hl">decode</span> é lento?</h1>
+          <p class="lede">Se a GPU faz <strong>trilhões</strong> de operações por segundo,<br>onde está o <em>gargalo</em> na geração de texto?</p>
+          <figure class="band">
+            <video src="assets/animacoes/capa-decode.mp4?v=2" poster="assets/animacoes/capa-decode.png?v=2" muted loop playsinline preload="auto"
+              aria-label="Animação: a grade de núcleos da GPU pisca muitas vezes para cada token que aparece na frase “O decode gera um token por vez”."></video>
+            <img class="print-only" src="assets/animacoes/capa-decode.png?v=2" alt="" hidden>
+          </figure>
+          <a class="lab-button" href="laboratorio/index.html?v=4">Ir para o laboratório <span aria-hidden="true">→</span></a>
+        </section>
+
+        <section class="slide content" id="slide-2" data-title="Prefill e decode" data-steps="3">
+          <div class="slide-head">
+            <p class="kicker">Revisão</p>
+            <h2>Prefill e decode</h2>
+          </div>
+          <svg class="diagram" id="prefill-decode" viewBox="0 0 1360 610" role="img"
+            aria-label="Linha do tempo com quatro passadas pelo modelo. Prefill, passada 1: os cinco tokens do prompt “Era uma vez um gato” entram juntos no modelo, que grava cinco entradas novas de chaves K e valores V no KV cache e gera o token “que”. Decode, passadas 2 a 4: entra no modelo só o token gerado na passada anterior; a atenção lê todas as entradas antigas do cache, marcadas como reutilizadas, grava uma entrada nova e o modelo gera o próximo token: “vivia”, “em”, “Paris”. TTFT (Time to First Token) é o tempo do envio do pedido até disponibilizar o primeiro token, incluindo o prefill e demais custos. TPOT (Time per Output Token) é o intervalo médio entre tokens de saída após o primeiro."></svg>
+        </section>
+
+        <section class="slide content" id="slide-3" data-title="A GPU como uma fábrica" data-steps="5">
+          <div class="slide-head">
+            <p class="kicker">Analogia</p>
+            <h2>A GPU como uma fábrica</h2>
+          </div>
+          <svg class="diagram" id="fabrica" viewBox="0 0 1360 580" role="img"
+            aria-label="Analogia de Horace He. À esquerda, um depósito cheio de caixas representa a memória da GPU (VRAM); à direita, uma fábrica representa os núcleos de cálculo. Uma estrada de quatro faixas leva caixas do depósito à fábrica. Capacidade é quanto cabe no depósito, medida em GB. Latência é quanto tempo dura uma viagem pela estrada, medida em nanossegundos. Banda é quanto passa por segundo por uma linha que cruza a estrada, medida em GB/s."></svg>
+        </section>
+
+        <section class="slide content" id="slide-4" data-title="Quem limita: cálculo ou memória?" data-steps="3">
+          <div class="slide-head">
+            <p class="kicker">Gargalo</p>
+            <h2>Quem limita: cálculo ou memória?</h2>
+          </div>
+          <svg class="diagram" id="gargalo" viewBox="0 0 1360 560" role="img"
+            aria-label="Dois cenários da analogia da fábrica, lado a lado. À esquerda, limitado pelo cálculo (compute-bound): uma estrada larga traz caixas rapidamente, que se acumulam na porta da fábrica; todas as máquinas estão ocupadas; o gargalo é a fábrica. À direita, limitado pela memória (memory-bound): uma estrada estreita traz caixas devagar; a maioria das máquinas fica parada esperando; o gargalo é a estrada."></svg>
+        </section>
+
+        <section class="slide content" id="slide-5" data-title="Uma leitura, quantos usos?" data-steps="4">
+          <div class="slide-head">
+            <p class="kicker">Prefill × decode</p>
+            <h2>Uma leitura, quantos usos?</h2>
+          </div>
+          <svg class="diagram" id="reuso" viewBox="0 0 1360 588" role="img"
+            aria-label="A matriz de pesos W, de 4 por 4 em FP16, fica na memória (VRAM); é uma das projeções de cada camada, como W_Q, W_K, W_V, W_O e as matrizes do MLP. Decode: W é lida (32 bytes) e multiplica 1 token, x; cada peso é usado 1 vez. Prefill: a mesma W, com a mesma leitura de 32 bytes, multiplica X, com 16 posições do prompt; cada peso é usado 16 vezes. O decode tende a ser limitado pela memória e o prefill, pelo cálculo: mesma leitura, 16 vezes mais cálculo."></svg>
+        </section>
+
+        <section class="slide content" id="slide-6" data-title="Quantos cálculos por byte?" data-steps="3">
+          <div class="slide-head">
+            <p class="kicker">Intensidade aritmética</p>
+            <h2>Quantos cálculos por byte?</h2>
+          </div>
+          <div class="intensidade">
+            <div class="def" data-s="1">
+              <span data-tex="I = \frac{\text{FLOPs}}{\text{bytes transferidos}}" data-display></span>
+              <p class="escala"><span class="memoria">baixa: limitado pela memória</span><span class="calculo">alta: limitado pelo cálculo</span></p>
+            </div>
+            <div class="linha">
+              <svg id="peso-fp16" viewBox="0 0 640 250" data-s="2" role="img"
+                aria-label="Matriz de pesos W em FP16 com o peso w11 destacado: 2 bytes. Uma seta leva às operações feitas com ele para um token: w11 vezes x1 é uma multiplicação; somar ao acumulado de y1 é uma soma; total de 2 FLOPs."></svg>
+              <div class="contas">
+                <div class="conta decode" data-s="2" style="--d:.7">
+                  <p class="rotulo">Decode · 1 token</p>
+                  <span data-tex="I \approx \frac{2\ \text{FLOPs}}{2\ \text{bytes}} = 1\ \text{FLOP/byte}"></span>
+                </div>
+                <div class="conta prefill" data-s="3">
+                  <p class="rotulo">Prefill · <span data-tex="n"></span> tokens</p>
+                  <span data-tex="I \approx \frac{2n\ \text{FLOPs}}{2\ \text{bytes}} = n\ \text{FLOP/byte}"></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide content" id="slide-7" data-title="Prefill e decode na A6000" data-steps="3">
+          <div class="slide-head">
+            <p class="kicker">Intensidade aritmética</p>
+            <h2>Prefill e decode na A6000</h2>
+          </div>
+          <div class="tabela-a6000">
+            <div class="faixa">
+              <p class="cenario">Llama-2-7B</p>
+              <p class="gpu"><span class="logo"><span class="recorte"><img src="assets/nvidia-logo-horizontal.svg" alt="NVIDIA"></span></span>A6000</p>
+              <p class="spec"><span class="spec-rot">pico FP16</span><span data-tex="155\ \text{TFLOP/s}"></span></p>
+              <p class="spec"><span class="spec-rot">banda da memória</span><span data-tex="768\ \text{GB/s}"></span></p>
+            </div>
+            <table class="ops" aria-label="Tabela 1 de LLM Inference Unveiled: operações do Llama-2-7B em FP16, sequência de 2.048 tokens e batch 1, analisadas pelo Roofline da NVIDIA RTX A6000. Valores por operação; o teto é o desempenho máximo teórico, não uma medição; o tráfego inclui entradas e saídas. Projeções q_proj, k_proj, v_proj e o_proj, cada uma: prefill com 69 G FLOPs, 67 MB, intensidade 1.024 FLOP por byte, teto de 155 TFLOP/s, limitada pelo cálculo; decode com 34 M FLOPs, 34 MB, intensidade 1, teto de 768 GFLOP/s, limitada pela memória. Projeções gate_proj, up_proj e down_proj, cada uma: prefill com 185 G FLOPs, 152 MB, intensidade 1.215, 155 TFLOP/s, cálculo; decode com 90 M FLOPs, 90 MB, intensidade 1, 768 GFLOP/s, memória. qk_matmul, Q vezes K transposta, e sv_matmul, S vezes V, cada uma: prefill com 34 G FLOPs, 302 MB, intensidade 114, 87 TFLOP/s, memória; decode com 17 M FLOPs, 17 MB, intensidade 0,99, 762 GFLOP/s, memória. Softmax: prefill com 671 M FLOPs, 537 MB, intensidade 1,25, 960 GFLOP/s, memória; decode com 328 K FLOPs, 262 KB, 1,25, 960 GFLOP/s, memória. Normalização (norm): prefill com 59 M FLOPs, 34 MB, intensidade 1,75, 1 TFLOP/s, memória; decode com 29 K FLOPs, 16 KB, 1,75, 1 TFLOP/s, memória. Adição (add): prefill com 8 M FLOPs, 34 MB, intensidade 0,25, 192 GFLOP/s, memória; decode com 4 K FLOPs, 16 KB, 0,25, 192 GFLOP/s, memória. No decode, todas as operações são limitadas pela memória; no prefill, só as projeções são limitadas pelo cálculo. A A6000 tem pico de 155 TFLOP/s em FP16 e banda de memória de 768 GB/s. Quando a operação é limitada pela memória, o teto é a intensidade aritmética, em FLOP por byte, vezes a banda, em bytes por segundo: na adição do decode, 0,25 vezes 768 G dá 192 GFLOP/s.">
+              <colgroup><col class="c-op"><col span="5"><col class="c-sep"><col span="5"></colgroup>
+              <thead>
+                <tr class="fases"><th rowspan="2" scope="col" class="op-h">Por operação</th><th colspan="5" scope="colgroup" class="fase prefill">Prefill</th><th class="sep" rowspan="2"></th><th colspan="5" scope="colgroup" class="fase decode">Decode</th></tr>
+                <tr class="cols"><th scope="col">FLOPs</th><th scope="col">Tráfego<span class="un" data-tex="\text{bytes}"></span></th><th scope="col" class="int">Intensidade<span class="un" data-tex="\text{FLOP/byte}"></span></th><th scope="col">Teto<span class="un" data-tex="\text{FLOP/s}"></span></th><th scope="col">Gargalo</th><th scope="col">FLOPs</th><th scope="col">Tráfego<span class="un" data-tex="\text{bytes}"></span></th><th scope="col" class="int">Intensidade<span class="un" data-tex="\text{FLOP/byte}"></span></th><th scope="col">Teto<span class="un" data-tex="\text{FLOP/s}"></span></th><th scope="col">Gargalo</th></tr>
+              </thead>
+              <tbody>
+                <tr class="proj"><th scope="row"><code>q_proj</code>, <code>k_proj</code>,<br><code>v_proj</code>, <code>o_proj</code></th><td>69 G</td><td>67 M</td><td class="int calculo">1.024</td><td>155 T</td><td class="garg"><span class="tag calculo">cálculo</span></td><td class="sep" aria-hidden="true"></td><td>34 M</td><td>34 M</td><td class="int memoria">1</td><td>768 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="proj"><th scope="row"><code>gate_proj</code>, <code>up_proj</code>,<br><code>down_proj</code></th><td>185 G</td><td>152 M</td><td class="int calculo">1.215</td><td>155 T</td><td class="garg"><span class="tag calculo">cálculo</span></td><td class="sep" aria-hidden="true"></td><td>90 M</td><td>90 M</td><td class="int memoria">1</td><td>768 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="outra"><th scope="row"><span data-tex="QK^{\mathsf T}"></span></th><td>34 G</td><td>302 M</td><td class="int memoria">114</td><td>87 T</td><td class="garg"><span class="tag memoria">memória</span></td><td class="sep" aria-hidden="true"></td><td>17 M</td><td>17 M</td><td class="int memoria">0,99</td><td>762 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="outra"><th scope="row"><span data-tex="SV"></span></th><td>34 G</td><td>302 M</td><td class="int memoria">114</td><td>87 T</td><td class="garg"><span class="tag memoria">memória</span></td><td class="sep" aria-hidden="true"></td><td>17 M</td><td>17 M</td><td class="int memoria">0,99</td><td>762 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="outra"><th scope="row">softmax</th><td>671 M</td><td>537 M</td><td class="int memoria">1,25</td><td>960 G</td><td class="garg"><span class="tag memoria">memória</span></td><td class="sep" aria-hidden="true"></td><td>328 K</td><td>262 K</td><td class="int memoria">1,25</td><td>960 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="outra"><th scope="row">normalização</th><td>59 M</td><td>34 M</td><td class="int memoria">1,75</td><td>1 T</td><td class="garg"><span class="tag memoria">memória</span></td><td class="sep" aria-hidden="true"></td><td>29 K</td><td>16 K</td><td class="int memoria">1,75</td><td>1 T</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+                <tr class="outra"><th scope="row">adição</th><td>8 M</td><td>34 M</td><td class="int memoria">0,25</td><td>192 G</td><td class="garg"><span class="tag memoria">memória</span></td><td class="sep" aria-hidden="true"></td><td>4 K</td><td>16 K</td><td class="int memoria">0,25</td><td id="teto-exemplo">192 G</td><td class="garg"><span class="tag memoria">memória</span></td></tr>
+              </tbody>
+            </table>
+            <div class="rodape-tab">
+              <p class="nota">Tráfego inclui entradas e saídas.</p>
+              <div class="conta-teto" data-s="3" style="--d:.5">
+                <span data-tex="\text{teto} = I\ (\text{FLOP/byte}) \times \text{banda}\ (\text{byte/s})"></span>
+                <span data-tex="0{,}25\ \text{FLOP/byte} \times 768\ \text{GB/s} = 192\ \text{GFLOP/s}"></span>
+              </div>
+            </div>
+            <svg class="marca-teto" id="marca-teto" aria-hidden="true">
+              <defs><marker id="seta-teto" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0 10 5 0 10z"/></marker></defs>
+              <ellipse data-s="3"/>
+              <path class="flow seta" pathLength="1" marker-end="url(#seta-teto)" data-s="3" style="--d:.2"/>
+            </svg>
+          </div>
+        </section>
+
+        <section class="slide content" id="slide-8" data-title="Roofline: onde está o gargalo?" data-steps="3">
+          <div class="slide-head">
+            <p class="kicker">Roofline · NVIDIA A6000, FP16</p>
+            <h2>Onde está o gargalo?</h2>
+          </div>
+          <svg class="diagram" id="teto" viewBox="0 0 1360 610" role="img"
+            aria-label="Gráfico Roofline da NVIDIA A6000 em FP16, com eixos lineares: intensidade aritmética de 0 a 1.100 FLOP por byte e desempenho de 0 a 180 TFLOP por segundo. A diagonal da banda, 768 GB por segundo vezes a intensidade, sobe da origem até o teto de cálculo de 155 TFLOP por segundo; elas se cruzam na transição, em cerca de 200 FLOP por byte. À esquerda da transição, a operação é limitada pela memória; à direita, pelo cálculo. O decode, com 1 FLOP por byte, fica junto à origem, em 0,77 TFLOP por segundo, 0,5 por cento do pico. O prefill, com 1.024 FLOP por byte, fica no teto de 155 TFLOP por segundo."></svg>
+        </section>
+
+        <section class="slide content" id="slide-9" data-title="Quantos bytes por token?" data-steps="4">
+          <div class="slide-head">
+            <p class="kicker">Pythia-1B · FP16 · contexto de 1.024 tokens</p>
+            <h2>Quantos bytes por token?</h2>
+          </div>
+          <svg class="diagram" id="bytes-token" viewBox="0 0 1360 540" role="img"
+            aria-label="Duas barras na mesma escala e com a mesma origem. Em cima, os pesos do Pythia-1B armazenados em FP16: 1.011.781.632 parâmetros vezes 2 bytes, 2,024 GB. O trecho final, o embedding de entrada de 206 MB, fica hachurado: a cada token, só 1 linha de 4 KB é lida. Embaixo, os bytes lidos por token: pesos, 1,818 GB, mais o KV cache, 0,134 GB, que são 1.024 posições vezes 131 KB. Total: cerca de 1,952 GB lidos por token."></svg>
+        </section>
+
+        <section class="slide content" id="slide-10" data-title="O que define os tokens/s?" data-steps="4">
+          <div class="slide-head">
+            <p class="kicker">Resposta</p>
+            <h2>O que define os tokens/s?</h2>
+          </div>
+          <div class="teto-final">
+            <div class="eq-linha" data-s="1">
+              <div class="eq geral" data-tex="\text{tokens/s} \;\le\; \frac{\text{banda}}{\text{bytes lidos por token}}" data-display></div>
+              <div class="eq dimensional" role="img" aria-label="Análise dimensional: bytes por segundo divididos por bytes por token; os bytes se cancelam e sobra tokens por segundo." data-tex="\frac{\text{bytes/s}}{\text{bytes/token}} = \frac{\cancel{\text{bytes}}}{\text{s}} \cdot \frac{\text{token}}{\cancel{\text{bytes}}} = \frac{\text{tokens}}{\text{s}}" data-display></div>
+            </div>
+            <div class="eq numeros" data-s="2">
+              <span data-tex="\frac{200\ \text{GB/s}}{1{,}952\ \text{GB/token}} \approx 102\ \text{tokens/s}" data-display></span>            </div>
+            <div class="cartoes">
+              <div class="cartao resposta" data-s="3">
+                <p class="rotulo">Por que o decode é lento?</p>
+                <p class="texto">Cada token exige ler cerca de <strong>2 GB</strong> da memória. Quem limita é a <strong>banda</strong>, não os FLOPs.</p>
+              </div>
+              <div class="cartao alavancas" data-s="4">
+                <p class="rotulo">Para subir o teto: ler menos bytes por token</p>
+                <table>
+                  <thead><tr><th>pesos</th><th>bytes/token</th><th>teto</th></tr></thead>
+                  <tbody>
+                    <tr><th>FP16</th><td>1,952 GB</td><td>≈ 102 tokens/s</td></tr>
+                    <tr class="ganho"><th>INT8</th><td>1,043 GB</td><td>≈ 192 tokens/s</td></tr>
+                    <tr class="ganho"><th>4 bits</th><td>0,589 GB</td><td>≈ 340 tokens/s</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="slide content" id="slide-11" data-title="Qual modelo cabe?" data-steps="4">
+          <div class="slide-head">
+            <p class="kicker">Capacidade de memória</p>
+            <h2>Qual modelo cabe?</h2>
+          </div>
+          <svg class="diagram" id="cabe" viewBox="0 0 1360 560" role="img"
+            aria-label="Dois depósitos de memória, com uma vaga para cada caixa de 4 GB. A GeForce RTX 5090 tem 32 GB de GDDR7 dedicada, 8 vagas; o DGX Spark tem 128 GB de LPDDR5X unificada, compartilhada entre CPU e GPU, 32 vagas. Uma carga de 16 GB, 4 caixas, cabe nos dois. Uma carga de 64 GB, 16 caixas, cabe no DGX Spark, com 64 GB de folga, mas não na RTX 5090: faltam 32 GB. Para caber na RTX 5090, é preciso quantizar, dividir a carga entre GPUs ou fazer offload para a RAM, e o desempenho muda."></svg>
+        </section>
+
+        <section class="slide content" id="slide-12" data-title="Quanto tempo para ler?" data-steps="4">
+          <div class="slide-head">
+            <p class="kicker">Banda de memória</p>
+            <h2>Quanto tempo para ler?</h2>
+          </div>
+          <svg class="diagram" id="ler" viewBox="0 0 1360 580" role="img"
+            aria-label="Os dois depósitos do slide anterior com a mesma carga de 16 GB, 4 caixas. De cada depósito sai um canal até a GPU, com largura proporcional à banda nominal: 1.792 GB por segundo na GeForce RTX 5090 e 273 GB por segundo no DGX Spark, cerca de 6,6 vezes menos. Ler os 16 GB leva cerca de 8,9 milissegundos na RTX 5090 e 58,6 milissegundos no DGX Spark. Teto de decode: 1.792 dividido por 16 dá 112 tokens por segundo na RTX 5090; 273 dividido por 16 dá cerca de 17 tokens por segundo no DGX Spark. São tetos com banda nominal, não medições."></svg>
+        </section>
+        <section class="slide cover encerramento" id="slide-13" data-title="Obrigado!">
+          <p class="kicker">Memória e banda</p>
+          <h1>Obrigado!</h1>
+          <section class="refs" aria-labelledby="refs-titulo">
+            <h2 class="refs-titulo" id="refs-titulo">Referências principais</h2>
+            <div class="refs-lista">
+              <a class="ref" href="https://horace.io/brrr_intro.html">
+                <span class="ref-img"><img src="assets/horace-brrr-fabrica-banda.jpg?v=1" alt="Desenho do artigo: memória (DRAM) à esquerda, fábrica de cálculo à direita e a estrada entre elas destacada como custo de banda."></span>
+                <span class="ref-nome">Making Deep Learning Go Brrrr From First Principles</span>
+                <span class="ref-autor">Horace He</span>
+              </a>
+              <a class="ref" href="https://arxiv.org/abs/2402.16363">
+                <span class="ref-img"><img src="assets/llm-inference-unveiled-roofline-a6000.png?v=1" alt="Figura do artigo: modelo Roofline da GPU NVIDIA A6000 em FP16, com a região limitada pela memória à esquerda do ponto de virada e a limitada pelo cálculo à direita."></span>
+                <span class="ref-nome">LLM Inference Unveiled: Survey and Roofline Model Insights</span>
+                <span class="ref-autor">Yuan et al., 2024</span>
+              </a>
+            </div>
+          </section>
+          <a class="lab-button" href="laboratorio/index.html?v=4">Ir para o laboratório <span aria-hidden="true">→</span></a>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script>
+  // Slide 2: cada bloco é uma passada pelo modelo. O token sai do modelo e entra na passada seguinte;
+  // abaixo, o KV cache (chaves K e valores V) é lido e atualizado pela atenção.
+  // data-s = etapa em que o elemento aparece; --d = atraso dentro da etapa (s, antes da velocidade).
+  (() => {
+    const svg = document.getElementById('prefill-decode');
+    const NS = 'http://www.w3.org/2000/svg';
+    const PROMPT = ['Era', 'uma', 'vez', 'um', 'gato'];
+    const OUT = ['que', 'vivia', 'em', 'Paris'];
+    const G = 194, GAP = 114, GX0 = 134, TOP = 52, BOTTOM = 476;
+    const MODEL_Y = 124, MODEL_H = 160, MID = MODEL_Y + MODEL_H / 2;
+    const K_Y = 334, ROW_H = 26, V_Y = K_Y + ROW_H + 6, CELL = 10, CELL_GAP = 2, STEP_X = CELL + CELL_GAP;
+    const PROMPT_W = 90, CHIP_W = 84, CHIP_H = 44, AXIS_Y = 512;
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    function chip(cx, y, w, word, kind, step, delay, cls) {
+      const g = add('g', staged(step, delay, `chip ${kind} ${cls}`));
+      add('rect', { x: cx - w / 2, y, width: w, height: CHIP_H, rx: 10 }, g);
+      add('text', { x: cx, y: y + CHIP_H / 2 + 9 }, g, word);
+    }
+    const arrow = (d, step, delay, kind = '') =>
+      add('path', { d, pathLength: 1, 'marker-end': `url(#seta${kind})`, ...staged(step, delay, `flow ${kind}`) });
+    // Colchete sob um grupo de células; o rótulo fica em (tx, anchor).
+    function bracket(x1, x2, y, label, kind, step, delay, tx, anchor) {
+      const g = add('g', staged(step, delay, `tag ${kind}`));
+      add('path', { d: `M${x1} ${y - 6}V${y}H${x2}V${y - 6}` }, g);
+      add('text', { x: tx, y: y + 26, class: anchor }, g, label);
+    }
+    // Largura dos rótulos, para centralizar “reutilizado  novo” em cada bloco.
+    function textWidth(label) {
+      const g = add('g', { class: 'tag' }), w = add('text', {}, g, label).getComputedTextLength();
+      g.remove();
+      return w;
+    }
+    const W_REUSED = textWidth('reutilizado'), W_FRESH = textWidth('novo'), LABEL_GAP = 16;
+
+    const defs = add('defs', {});
+    for (const kind of ['', '-le', '-grava']) {
+      const marker = add('marker', { id: 'seta' + kind, viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+      add('path', { d: 'M0 0 10 5 0 10z', class: 'arrowhead' + kind }, marker);
+    }
+
+    const gx = k => GX0 + k * (G + GAP);
+    add('path', { d: `M20 ${AXIS_Y}H1340`, class: 'axis', 'marker-end': 'url(#seta)' });
+    add('text', { x: 1340, y: AXIS_Y - 12, class: 'axis-label' }, svg, 'tempo');
+
+    // Fases.
+    add('text', { x: gx(0) + G / 2, y: 30, ...staged(1, 0, 'phase prefill') }, svg, 'Prefill');
+    const decode = add('g', staged(2, 0, 'phase decode'));
+    add('path', { d: `M${gx(1)} 46V38H${gx(3) + G}V46` }, decode);
+    add('text', { x: (gx(1) + gx(3) + G) / 2, y: 26 }, decode, 'Decode');
+
+    // Prompt: todos os tokens entram juntos na primeira passada.
+    add('text', { x: PROMPT_W / 2, y: MID - 2.5 * CHIP_H - 2 * 6 - 14, ...staged(1, 0, 'note') }, svg, 'prompt');
+    PROMPT.forEach((w, i) => chip(PROMPT_W / 2, MID - (2.5 - i) * CHIP_H - (2 - i) * 6, PROMPT_W, w, 'prompt', 1, 0.1, 'slide-in'));
+    const stackTop = MID - 2.5 * CHIP_H - 12, stackBottom = MID + 2.5 * CHIP_H + 12;
+    add('path', { d: `M${PROMPT_W + 8} ${stackTop}H${PROMPT_W + 14}V${stackBottom}H${PROMPT_W + 8}`, ...staged(1, 0.4, 'join') });
+    arrow(`M${PROMPT_W + 14} ${MID}H${gx(0) + 8}`, 1, 0.45);
+
+    // Etapa e início de cada passada: prefill (1), primeiro decode (2), demais decodes (3).
+    [[1, 0], [2, 0], [3, 0], [3, 2.1]].forEach(([step, t0], k) => {
+      const x = gx(k), mx = x + 12, mw = G - 24, cx = x + G / 2, prefill = k === 0;
+      const t = t0 + (prefill ? 0.55 : 0.1);
+      add('rect', { x, y: TOP, width: G, height: BOTTOM - TOP, rx: 18, ...staged(step, t0, 'pass') });
+      add('text', { x: cx, y: TOP + 40, ...staged(step, t0, 'pass-label') }, svg, `passada ${k + 1}`);
+      const model = add('g', staged(step, t, 'model'));
+      add('rect', { x: mx, y: MODEL_Y, width: mw, height: MODEL_H, rx: 14 }, model);
+      add('text', { x: cx, y: MID + 10 }, model, 'modelo');
+      if (!prefill) arrow(`M${x - GAP / 2 + CHIP_W / 2 + 4} ${MID}H${mx - 4}`, step, t + 0.15);
+
+      // KV cache: chaves K e valores V; entradas antigas são lidas, a nova é gravada.
+      // Cada grupo (antigas, nova) fica centralizado sob o próprio rótulo; no decode, o par
+      // “reutilizado  novo” é centralizado no bloco, como o “novo” do prefill.
+      const old = prefill ? 0 : PROMPT.length + k - 1, fresh = prefill ? PROMPT.length : 1;
+      const groupW = n => n * STEP_X - CELL_GAP;
+      const lineLeft = cx - (W_REUSED + LABEL_GAP + W_FRESH) / 2;
+      const reusedC = lineLeft + W_REUSED / 2;
+      const freshC = prefill ? cx : lineLeft + W_REUSED + LABEL_GAP + W_FRESH / 2;
+      const oldStart = reusedC - groupW(old) / 2, newStart = freshC - groupW(fresh) / 2;
+      const cellX = i => i < old ? oldStart + i * STEP_X : newStart + (i - old) * STEP_X;
+      const first = cellX(0), lastRight = cellX(old + fresh - 1) + CELL;
+      const tRead = t + 0.4, tWrite = prefill ? t + 0.4 : t + 1.0;
+      add('text', { x: first - 8, y: K_Y + ROW_H - 5, ...staged(step, t + 0.35, 'kv') }, svg, 'K');
+      add('text', { x: first - 8, y: V_Y + ROW_H - 5, ...staged(step, t + 0.35, 'kv') }, svg, 'V');
+      for (let i = 0; i < old + fresh; i++) {
+        const isNew = i >= old;
+        for (const y of [K_Y, V_Y]) {
+          const cell = add('rect', { x: cellX(i), y, width: CELL, height: ROW_H, rx: 3,
+            ...staged(step, isNew ? tWrite + 0.1 : tRead, isNew ? 'cell new pop' : 'cell old read') });
+          if (!isNew) cell.style.setProperty('--r', tRead + 0.15);
+        }
+      }
+      // Leitura sai do grupo antigo; gravação chega às células novas.
+      const below = V_Y + ROW_H + 14;
+      if (!prefill) {
+        const oldRight = cellX(old - 1) + CELL;
+        arrow(`M${reusedC} ${K_Y - 6}V${MODEL_Y + MODEL_H + 6}`, step, tRead, '-le');
+        bracket(first, oldRight, below, 'reutilizado', 'reused', step, tRead + 0.25, reusedC, 'middle');
+      }
+      bracket(newStart, lastRight, below, 'novo', 'fresh', step, tWrite + 0.3, freshC, 'middle');
+      arrow(`M${freshC} ${MODEL_Y + MODEL_H + 6}V${K_Y - 6}`, step, tWrite, '-grava');
+
+      // O token sai do modelo e segue para a próxima passada.
+      const ox = x + G + GAP / 2;
+      const tOut = prefill ? t + 0.9 : t + 1.5;
+      arrow(`M${mx + mw + 4} ${MID}H${ox - CHIP_W / 2 - 4}`, step, tOut);
+      chip(ox, MID - CHIP_H / 2, CHIP_W, OUT[k], 'generated', step, tOut + 0.2, 'rise');
+    });
+
+    // Métricas ligadas à mesma linha do tempo. TTFT começa no pedido, antes do prefill;
+    // TPOT caracteriza a média dos intervalos seguintes, sem incluir a espera inicial.
+    const outputX = k => gx(k) + G + GAP / 2;
+    const ttft = add('g', staged(1, 1.8, 'metric ttft'));
+    add('path', { d: `M20 520V530H${outputX(0) - 10}V520` }, ttft);
+    add('text', { x: 20, y: 558, class: 'metric-name' }, ttft, 'TTFT · Time to First Token');
+    add('text', { x: 20, y: 590, class: 'metric-definition' }, ttft, 'Até o primeiro token: prefill + demais custos');
+    add('text', { x: 20, y: 500, ...staged(1, 1.8, 'request-label') }, svg, 'pedido');
+    add('path', { d: `M20 ${AXIS_Y - 5}V${AXIS_Y + 5}`, ...staged(1, 1.8, 'metric-tick') });
+
+    add('text', { x: outputX(0), y: 500, ...staged(1, 1.8, 'first-token-label') }, svg, '1º token');
+
+    const tpot = add('g', staged(2, 1.8, 'metric tpot'));
+    add('text', { x: 620, y: 558, class: 'metric-name' }, tpot, 'TPOT · Time per Output Token');
+    add('text', { x: 620, y: 590, class: 'metric-definition' }, tpot, 'Intervalo médio entre tokens após o primeiro');
+    for (let k = 0; k < OUT.length; k++) {
+      const step = k === 0 ? 1 : k === 1 ? 2 : 3;
+      const delay = k === 3 ? 3.8 : 1.8;
+      add('path', { d: `M${outputX(k)} ${AXIS_Y - 5}V${AXIS_Y + 5}`, ...staged(step, delay, 'metric-tick') });
+      if (k > 0) add('path', { d: `M${outputX(k - 1) + 10} 520V530H${outputX(k) - 10}V520`, ...staged(step, delay, 'metric tpot') });
+    }
+  })();
+  </script>
+  <script>
+  // Slide 3: analogia de Horace He. Depósito = memória da GPU; fábrica = núcleos de cálculo;
+  // estrada = transporte entre eles. Etapas: (1) depósito e fábrica, (2) estrada com caixas,
+  // (3) capacidade, (4) latência, (5) banda.
+  (() => {
+    const svg = document.getElementById('fabrica');
+    const NS = 'http://www.w3.org/2000/svg';
+    const ROAD = { x1: 360, x2: 1000, y: 230, lane: 35, lanes: 4 };
+    const ROAD_Y2 = ROAD.y + ROAD.lane * ROAD.lanes;
+    const CRATE = 22, MEASURE_Y = 492;
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    // Nome da medida em destaque e descrição curta abaixo.
+    function caption(g, x, y, name, desc) {
+      add('text', { x, y, class: 'measure' }, g, name);
+      add('text', { x, y: y + 32, class: 'desc' }, g, desc);
+    }
+
+    const defs = add('defs', {});
+    const marker = add('marker', { id: 'seta-fab', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto-start-reverse' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'arrowhead' }, marker);
+    const clip = add('clipPath', { id: 'estrada' }, defs);
+    add('rect', { x: ROAD.x1, y: ROAD.y, width: ROAD.x2 - ROAD.x1, height: ROAD_Y2 - ROAD.y }, clip);
+
+    // Etapa 1: depósito (memória) e fábrica (cálculo).
+    const store = add('g', staged(1, 0, 'store'));
+    add('text', { x: 190, y: 40, class: 'title' }, store, 'depósito');
+    add('text', { x: 190, y: 72, class: 'sub' }, store, 'memória da GPU (VRAM)');
+    add('path', { d: 'M20 470V170L190 112L360 170V470Z', class: 'building' }, store);
+    for (let r = 0; r < 6; r++) {
+      add('path', { d: `M36 ${222 + r * 42}H344`, class: 'shelf' }, store);
+      for (let c = 0; c < 9; c++)
+        add('rect', { x: 42 + c * 33.5, y: 222 + r * 42 - 30, width: 26, height: 28, rx: 4, class: 'stock' }, store);
+    }
+
+    const factory = add('g', staged(1, 0.3, 'factory'));
+    add('text', { x: 1170, y: 40, class: 'title' }, factory, 'fábrica');
+    add('text', { x: 1170, y: 72, class: 'sub' }, factory, 'núcleos de cálculo');
+    add('path', { d: 'M1000 470V170L1000 118L1113 170V118L1226 170V118L1340 170V470Z', class: 'building' }, factory);
+    for (let r = 0; r < 4; r++)
+      for (let c = 0; c < 5; c++)
+        add('rect', { x: 1040 + c * 56, y: 214 + r * 60, width: 42, height: 42, rx: 6, class: 'core loop',
+          style: `animation-delay:${-((r * 5 + c) * 0.37) % 1.6}s` }, factory);
+
+    // Etapa 2: estrada de quatro faixas; caixas saem do depósito e entram na fábrica.
+    const road = add('g', staged(2, 0, 'road'));
+    add('rect', { x: ROAD.x1, y: ROAD.y, width: ROAD.x2 - ROAD.x1, height: ROAD_Y2 - ROAD.y, class: 'asphalt' }, road);
+    for (let l = 1; l < ROAD.lanes; l++) add('path', { d: `M${ROAD.x1} ${ROAD.y + l * ROAD.lane}H${ROAD.x2}`, class: 'lane' }, road);
+    const traffic = add('g', { 'clip-path': 'url(#estrada)' }, road);
+    const PER_LANE = 5;
+    for (let l = 0; l < ROAD.lanes; l++)
+      for (let i = 0; i < PER_LANE; i++) {
+        const p = (i + l * 0.37) / PER_LANE % 1;
+        add('rect', { x: ROAD.x1 - CRATE, y: ROAD.y + l * ROAD.lane + (ROAD.lane - CRATE) / 2, width: CRATE, height: CRATE, rx: 4,
+          class: 'crate loop', style: `--p:${p}` }, traffic);
+      }
+
+    // Etapa 3: capacidade, sob o depósito.
+    const cap = add('g', staged(3, 0, 'measure-group'));
+    add('path', { d: `M20 ${MEASURE_Y - 10}V${MEASURE_Y}H360V${MEASURE_Y - 10}`, class: 'bracket' }, cap);
+    caption(cap, 190, MEASURE_Y + 38, 'capacidade', 'quanto cabe (GB)');
+
+    // Etapa 4: latência, ao longo da estrada.
+    const lat = add('g', staged(4, 0, 'measure-group'));
+    for (const x of [ROAD.x1 + 10, ROAD.x2 - 10]) add('path', { d: `M${x} ${ROAD_Y2 + 8}V${MEASURE_Y + 8}`, class: 'guide' }, lat);
+    add('path', { d: `M${ROAD.x1 + 14} ${MEASURE_Y}H${ROAD.x2 - 14}`, class: 'span', 'marker-start': 'url(#seta-fab)', 'marker-end': 'url(#seta-fab)' }, lat);
+    caption(lat, (ROAD.x1 + ROAD.x2) / 2, MEASURE_Y + 38, 'latência', 'duração de uma viagem (ns)');
+
+    // Etapa 5: banda, quanto atravessa por segundo uma linha que cruza a estrada.
+    const band = add('g', staged(5, 0, 'measure-group'));
+    const gate = (ROAD.x1 + ROAD.x2) / 2;
+    add('path', { d: `M${gate} ${ROAD.y - 34}V${ROAD_Y2 + 16}`, class: 'gate' }, band);
+    caption(band, gate, ROAD.y - 82, 'banda', 'quanto passa por segundo (GB/s)');
+  })();
+  </script>
+  <script>
+  // Slide 4: os dois tipos de gargalo na analogia da fábrica. Etapas: (1) limitado pelo cálculo,
+  // (2) limitado pela memória, (3) o gargalo de cada cenário.
+  (() => {
+    const svg = document.getElementById('gargalo');
+    const NS = 'http://www.w3.org/2000/svg';
+    const CRATE = 22, MEIO = 255;                      // altura do centro da estrada
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    const defs = add('defs', {});
+
+    // Um cenário completo: depósito → estrada → fábrica, uso das máquinas e legenda.
+    // op: faixas e caixas da estrada, duração de uma viagem, fila na porta, máquinas ocupadas.
+    function painel(x0, id, step, op) {
+      // O deslocamento fica num grupo externo: a regra de etapas zera o transform do grupo visível.
+      const g = add('g', staged(step, 0, `painel ${id}`), add('g', { transform: `translate(${x0} 0)` }));
+      add('text', { x: 315, y: 34, class: `titulo ${id}` }, g, op.titulo);
+      add('text', { x: 315, y: 70, class: 'termo' }, g, op.termo);
+
+      // Depósito com estoque.
+      add('path', { d: 'M0 360V160L75 112L150 160V360Z', class: 'building store' }, g);
+      for (let r = 0; r < 5; r++) for (let c = 0; c < 3; c++)
+        add('rect', { x: 18 + c * 40, y: 180 + r * 36, width: 32, height: 28, rx: 4, class: 'stock' }, g);
+
+      // Estrada: largura proporcional à banda; caixas em movimento contínuo.
+      const altura = op.faixas * 30, y0 = MEIO - altura / 2, x1 = 150, x2 = 400;
+      const clip = add('clipPath', { id: `estrada-${id}` }, defs);
+      add('rect', { x: x0 + x1, y: y0, width: x2 - x1, height: altura }, clip);
+      const estrada = add('rect', { x: x1, y: y0, width: x2 - x1, height: altura, class: 'asphalt' }, g);
+      const fimViagem = x2 - x1 - op.fila * 30 - CRATE;
+      const transito = add('g', { 'clip-path': `url(#estrada-${id})`, transform: `translate(${-x0} 0)` }, g);
+      for (let l = 0; l < op.faixas; l++)
+        for (let i = 0; i < op.porFaixa; i++)
+          add('rect', { x: x0 + x1 - CRATE, y: y0 + l * 30 + 4, width: CRATE, height: CRATE, rx: 4, class: 'crate loop',
+            style: `--p:${((i + l * 0.37) / op.porFaixa) % 1};--dist:${fimViagem + CRATE}px;--dur:${op.viagem}s` }, transito);
+      // Fila de caixas esperando na porta da fábrica.
+      for (let i = 0; i < op.fila * op.faixas; i++)
+        add('rect', { x: x2 - 28 - Math.floor(i / op.faixas) * 30, y: y0 + (i % op.faixas) * 30 + 4, width: CRATE, height: CRATE, rx: 4, class: 'crate parada' }, g);
+
+      // Fábrica com 3 × 3 máquinas.
+      const fabrica = add('path', { d: 'M400 360V160L400 116L477 160V116L554 160V116L630 160V360Z', class: 'building factory' }, g);
+      const maquinas = [];
+      for (let r = 0; r < 3; r++) for (let c = 0; c < 3; c++)
+        maquinas.push(add('rect', { x: 435 + c * 58, y: 190 + r * 56, width: 44, height: 44, rx: 6, class: 'core' }, g));
+      op.maquinas(maquinas);
+
+      // Máquinas ocupadas.
+      add('text', { x: 515, y: 404, class: 'uso' }, g, 'máquinas ocupadas');
+      add('rect', { x: 400, y: 418, width: 230, height: 26, rx: 6, class: 'uso-trilho' }, g);
+      add('rect', { x: 400, y: 418, width: 230 * op.ocupacao, height: 26, rx: 6, class: `uso-barra ${id}` }, g);
+      add('text', { x: 315, y: 520, class: 'legenda' }, g, op.legenda);
+
+      // Etapa 3: o gargalo do cenário.
+      const destaque = add('g', staged(3, step === 1 ? 0 : 0.15, 'gargalo-tag'), add('g', { transform: `translate(${x0} 0)` }));
+      if (op.gargalo === 'fabrica') {
+        add('path', { d: 'M392 368V108L477 150V108L554 150V108L638 154V368Z', class: 'contorno' }, destaque);
+        add('text', { x: 515, y: 96, class: 'tag' }, destaque, 'gargalo');
+      } else {
+        add('rect', { x: x1 - 6, y: y0 - 8, width: x2 - x1 + 12, height: altura + 16, rx: 8, class: 'contorno' }, destaque);
+        add('text', { x: (x1 + x2) / 2, y: y0 - 22, class: 'tag' }, destaque, 'gargalo');
+      }
+      return { g, estrada, fabrica };
+    }
+
+    painel(0, 'calculo', 1, {
+      titulo: 'Limitado pelo cálculo', termo: '(compute-bound)', faixas: 4, porFaixa: 4, viagem: 1.4, fila: 2,
+      ocupacao: 0.96, gargalo: 'fabrica', legenda: 'as caixas esperam a fábrica',
+      maquinas: ms => ms.forEach((m, i) => { m.classList.add('ocupada', 'loop'); m.style.animationDelay = `${-(i * 0.29) % 1.2}s`; }),
+    });
+    // Divisória discreta entre os dois cenários.
+    add('path', { d: 'M680 20V540', ...staged(2, 0, 'divisoria') });
+    painel(730, 'memoria', 2, {
+      titulo: 'Limitado pela memória', termo: '(memory-bound)', faixas: 1, porFaixa: 2, viagem: 4, fila: 0,
+      ocupacao: 0.22, gargalo: 'estrada', legenda: 'a fábrica espera as caixas',
+      // Duas máquinas trabalham, alternadas, quando chega uma caixa (a cada meia viagem).
+      maquinas: ms => {
+        ms.forEach(m => m.classList.add('parada'));
+        [[4, 0], [2, -2]].forEach(([i, atraso]) => { ms[i].classList.add('chegada', 'loop'); ms[i].style.setProperty('--atraso', `${atraso}s`); });
+      },
+    });
+  })();
+  </script>
+  <script>
+  // Slide 5: a mesma leitura de W serve a 1 token (decode) ou a 16 (prefill). Etapas: (1) W na
+  // memória, (2) decode, (3) prefill com a mesma leitura, (4) gargalo e fechamento.
+  (() => {
+    const svg = document.getElementById('reuso');
+    const NS = 'http://www.w3.org/2000/svg';
+    const D = 4, N = 16, BYTES = D * D * 2;           // pesos FP16 de 2 bytes
+    const TOPO = 274;                                   // topo das matrizes nas duas operações
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    // Texto com trechos matemáticos: partes [texto, 'math' | 'sub' | ''].
+    function rica(parent, attrs, partes) {
+      const t = add('text', attrs, parent);
+      partes.forEach(([txt, tipo]) => add('tspan', tipo === 'sub' ? { class: 'math sub', 'baseline-shift': 'sub' } : tipo ? { class: tipo } : {}, t, txt));
+      return t;
+    }
+    function grade(parent, x0, y0, cel, gap, cls) {
+      const cells = [];
+      for (let r = 0; r < D; r++) for (let c = 0; c < D; c++)
+        cells.push(add('rect', { x: x0 + c * (cel + gap), y: y0 + r * (cel + gap), width: cel, height: cel, rx: 4, class: cls }, parent));
+      return cells;
+    }
+    const defs = add('defs', {});
+    const m = add('marker', { id: 'seta-reuso', viewBox: '0 0 10 10', refX: 9, refY: 5, markerUnits: 'userSpaceOnUse', markerWidth: 14, markerHeight: 14, orient: 'auto' }, defs);
+    add('path', { d: 'M1 1L9 5L1 9Z', class: 'arrowhead' }, m);
+
+    // Etapa 1: W na memória.
+    const mem = add('g', staged(1, 0));
+    add('rect', { x: 550, y: 0, width: 260, height: 142, rx: 16, class: 'box vram' }, mem);
+    add('text', { x: 680, y: 30, class: 'box-tag' }, mem, 'memória (VRAM)');
+    rica(mem, { x: 604, y: 100, class: 'math big' }, [['W', 'math']]);
+    grade(mem, 636, 42, 21, 4, 'peso');
+    // De onde vem W: nomeado uma única vez, ao lado da memória.
+    add('text', { x: 840, y: 60, class: 'nota inicio' }, mem, 'uma das projeções de cada camada:');
+    rica(mem, { x: 840, y: 98, class: 'nota inicio' }, [['W', 'math'], ['Q', 'sub'], [', ', ''], ['W', 'math'], ['K', 'sub'],
+      [', ', ''], ['W', 'math'], ['V', 'sub'], [', ', ''], ['W', 'math'], ['O', 'sub'], [' e as do MLP', '']]);
+
+    // Uma operação: W × entrada, com os usos de w₁₁ desenhados como arcos até cada token.
+    function operacao(step, cx, titulo, colunas, rotuloEntrada, usos) {
+      const g = add('g', staged(step, 0));
+      // Leitura da memória: o trecho final reto mantém a ponta alinhada e fora da curva.
+      const esquerda = cx < 680, xs = esquerda ? 610 : 750;
+      add('path', { d: `M${xs} 146C${xs} 178 ${cx} 160 ${cx} 174V186`, class: 'leitura', 'marker-end': 'url(#seta-reuso)' }, g);
+      add('text', { x: esquerda ? 470 : 890, y: 156, class: `bytes ${esquerda ? 'fim' : 'inicio'}` }, g, `lê ${BYTES} bytes`);
+      add('text', { x: cx, y: 220, class: `titulo ${colunas === 1 ? 'decode' : 'prefill'}` }, g, titulo);
+
+      const cel = 30, gap = 6, w = D * cel + (D - 1) * gap;
+      const xW = cx - 150 - (colunas === 1 ? 0 : 120);
+      rica(g, { x: xW - 22, y: TOPO + w / 2 + 12, class: 'math big', 'text-anchor': 'end' }, [['W', 'math']]);
+      const pesos = grade(g, xW, TOPO, cel, gap, 'peso');
+      add('text', { x: xW + w + 26, y: TOPO + w / 2 + 12, class: 'op' }, g, '×');
+      const xE = xW + w + 56, cw = colunas === 1 ? cel : 18, cg = colunas === 1 ? 0 : 5;
+      rica(g, { x: xE + (colunas * (cw + cg) - cg) / 2, y: TOPO + w + 36, class: 'math big' }, [[rotuloEntrada, 'math']]);
+      const tops = [];
+      for (let j = 0; j < colunas; j++) {
+        for (let r = 0; r < D; r++)
+          add('rect', { x: xE + j * (cw + cg), y: TOPO + r * (cel + gap), width: cw, height: cel, rx: 3, class: r === 0 ? 'token alvo' : 'token' }, g);
+        tops.push(xE + j * (cw + cg) + cw / 2);
+      }
+      // w₁₁ em destaque e um arco por uso (um por token).
+      pesos[0].classList.add('w11');
+      const x0 = xW + cel / 2;
+      tops.forEach((xt, j) => add('path', { d: `M${x0} ${TOPO - 4}Q${(x0 + xt) / 2} ${TOPO - 64} ${xt} ${TOPO - 4}`, pathLength: 1,
+        ...staged(step, 0.5 + j * 0.06, 'uso') }, g));
+      rica(g, { x: cx, y: TOPO + w + 80, class: 'contagem' }, [['cada peso é usado ', ''], [usos, 'destaque']]);
+      return g;
+    }
+    operacao(2, 330, 'Decode · 1 token', 1, 'x', '1 vez');
+    operacao(3, 1030, 'Prefill · 16 tokens do prompt', N, 'X', '16 vezes');
+
+    // Etapa 4: o gargalo de cada lado (como no slide 4) e o fechamento.
+    const fim = add('g', staged(4, 0));
+    add('text', { x: 330, y: 528, class: 'gargalo memoria' }, fim, 'tende a ser limitado pela memória');
+    add('text', { x: 1030, y: 528, class: 'gargalo calculo' }, fim, 'tende a ser limitado pelo cálculo');
+    add('text', { x: 680, y: 576, class: 'fecho' }, fim, 'mesma leitura, 16 vezes mais cálculo');
+  })();
+  </script>
+  <script src="vendor/katex/katex.min.js"></script>
+  <script>
+  // Fórmulas com o KaTeX local: data-tex="…" (e data-display para bloco).
+  document.querySelectorAll('[data-tex]').forEach(el => {
+    if (window.katex) katex.render(el.dataset.tex, el, { displayMode: el.hasAttribute('data-display'), throwOnError: false });
+    else el.textContent = el.dataset.tex;
+  });
+  </script>
+  <script>
+  // Slide 6: um peso FP16 de 2 bytes faz 2 FLOPs por token (1 multiplicação + 1 soma).
+  (() => {
+    const svg = document.getElementById('peso-fp16');
+    const NS = 'http://www.w3.org/2000/svg';
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    function rica(attrs, partes, parent = svg) {
+      const t = add('text', attrs, parent);
+      partes.forEach(([txt, tipo]) => add('tspan', tipo === 'sub' ? { class: 'math sub', 'baseline-shift': 'sub' } : tipo ? { class: tipo } : {}, t, txt));
+      return t;
+    }
+    const defs = add('defs', {});
+    const m = add('marker', { id: 'seta-peso', viewBox: '0 0 10 10', refX: 8, refY: 5, markerWidth: 6, markerHeight: 6, orient: 'auto' }, defs);
+    add('path', { d: 'M0 0 10 5 0 10z', class: 'arrowhead' }, m);
+
+    // Matriz W em FP16, com w₁₁ destacado.
+    const X0 = 60, Y0 = 62, CEL = 40, GAP = 7;
+    rica({ x: X0 - 18, y: Y0 + 2 * (CEL + GAP) + 6, class: 'math grande fim' }, [['W', 'math']]);
+    for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++)
+      add('rect', { x: X0 + c * (CEL + GAP), y: Y0 + r * (CEL + GAP), width: CEL, height: CEL, rx: 6, class: r + c ? 'peso' : 'peso w11' });
+    // Rótulo acima da matriz; a seta passa por baixo dele, rente à primeira linha.
+    rica({ x: X0 - 40, y: Y0 - 30, class: 'rotulo-peso' }, [['w', 'math'], ['11', 'sub'], [' = 2 bytes (FP16)', '']]);
+
+    // Seta até as operações feitas com w₁₁ para um token.
+    add('path', { d: `M${X0 + CEL / 2} ${Y0 - 4}C${X0 + 40} ${Y0 - 20} 250 ${Y0 - 14} 286 ${Y0 + 16}`, class: 'seta', 'marker-end': 'url(#seta-peso)' });
+    const XO = 300, XD = 430;
+    rica({ x: XO, y: 96, class: 'op inicio' }, [['w', 'math'], ['11', 'sub'], [' × ', ''], ['x', 'math'], ['1', 'sub']]);
+    add('text', { x: XD, y: 96, class: 'op inicio' }, svg, '1 multiplicação');
+    rica({ x: XO, y: 144, class: 'op inicio' }, [['+ em ', ''], ['y', 'math'], ['1', 'sub']]);
+    add('text', { x: XD, y: 144, class: 'op inicio' }, svg, '1 soma');
+    add('path', { d: `M${XO} 168H636`, class: 'traco' });
+    add('text', { x: XD, y: 212, class: 'total inicio' }, svg, '2 FLOPs');
+  })();
+  </script>
+  <script>
+  // Slide 7: círculo tracejado no último teto do decode (adição) e seta até a conta teto = I × banda.
+  // Posições medidas no layout (coordenadas do palco, sem a escala da janela).
+  (() => {
+    const box = document.querySelector('.tabela-a6000');
+    const svg = document.getElementById('marca-teto');
+    const cel = document.getElementById('teto-exemplo');
+    const conta = box.querySelector('.conta-teto');
+    function posicionar() {
+      const b = box.getBoundingClientRect();
+      const k = box.offsetWidth / b.width || 1;
+      const r = el => { const q = el.getBoundingClientRect(); return { x: (q.left - b.left) * k, y: (q.top - b.top) * k, w: q.width * k, h: q.height * k }; };
+      const c = r(cel), d = r(conta);
+      const cx = c.x + c.w / 2 + 4, cy = c.y + c.h / 2, rx = c.w / 2 + 6, ry = c.h / 2 + 2;
+      const e = svg.querySelector('ellipse');
+      e.setAttribute('cx', cx); e.setAttribute('cy', cy); e.setAttribute('rx', rx); e.setAttribute('ry', ry);
+      const x0 = cx - rx * .35, y0 = cy + ry * .94, x1 = d.x + d.w + 14, y1 = d.y + d.h / 2;
+      svg.querySelector('.seta').setAttribute('d', `M${x0} ${y0}C${x0 - 10} ${y1} ${x1 + 60} ${y1} ${x1} ${y1}`);
+    }
+    posicionar();
+    document.fonts?.ready.then(posicionar);
+    addEventListener('resize', posicionar);
+    addEventListener('beforeprint', posicionar);
+  })();
+  </script>
+  <script>
+  // Slide 8: Roofline da A6000 (FP16), eixos lineares como na Figura 5 de "LLM Inference Unveiled".
+  // Etapas: (1) diagonal da banda, (2) teto de cálculo, transição e regiões, (3) decode e prefill.
+  (() => {
+    const svg = document.getElementById('teto');
+    const NS = 'http://www.w3.org/2000/svg';
+    const BANDA = 768e9, PICO = 155e12, T = 1e12;      // bytes/s e FLOP/s
+    const TRANSICAO = PICO / BANDA;                     // ≈ 202 FLOP/byte
+    const AREA = { x0: 150, x1: 1300, y0: 80, y1: 520 }, I_MAX = 1100, P_MAX = 180 * T;
+    const X = i => AREA.x0 + i / I_MAX * (AREA.x1 - AREA.x0);
+    const Y = p => AREA.y1 - p / P_MAX * (AREA.y1 - AREA.y0);
+    const limite = i => Math.min(PICO, BANDA * i);
+    const br = (x, casas = 0) => x.toLocaleString('pt-BR', { minimumFractionDigits: casas, maximumFractionDigits: casas });
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+
+    const defs = add('defs', {});
+    const clip = add('clipPath', { id: 'area-teto' }, defs);
+    add('rect', { x: AREA.x0, y: AREA.y0, width: AREA.x1 - AREA.x0, height: AREA.y1 - AREA.y0 }, clip);
+
+    // Regiões (etapa 2), sob tudo.
+    const regioes = add('g', { 'clip-path': 'url(#area-teto)' });
+    // Faixas de intensidade: à esquerda da transição, a banda limita; à direita, o cálculo.
+    add('rect', { x: AREA.x0, y: AREA.y0, width: X(TRANSICAO) - AREA.x0, height: AREA.y1 - AREA.y0, ...staged(2, 0.6, 'regiao memoria') }, regioes);
+    add('rect', { x: X(TRANSICAO), y: AREA.y0, width: AREA.x1 - X(TRANSICAO), height: AREA.y1 - AREA.y0, ...staged(2, 0.6, 'regiao calculo') }, regioes);
+
+    // Eixos com marcas.
+    const eixos = add('g', { class: 'eixos' });
+    for (let i = 0; i <= 1000; i += 200) {
+      add('path', { d: `M${X(i)} ${AREA.y0}V${AREA.y1}`, class: 'grade' }, eixos);
+      add('text', { x: X(i), y: AREA.y1 + 32, class: 'marca' }, eixos, br(i));
+    }
+    for (let p = 0; p <= 150; p += 50) {
+      add('path', { d: `M${AREA.x0} ${Y(p * T)}H${AREA.x1}`, class: 'grade' }, eixos);
+      add('text', { x: AREA.x0 - 14, y: Y(p * T) + 8, class: 'marca y' }, eixos, br(p));
+    }
+    add('path', { d: `M${AREA.x0} ${AREA.y0}V${AREA.y1}H${AREA.x1}`, class: 'eixo' }, eixos);
+    const tx = add('text', { x: (AREA.x0 + AREA.x1) / 2, y: AREA.y1 + 76, class: 'titulo-eixo' }, eixos, 'intensidade aritmética ');
+    add('tspan', { class: 'math' }, tx, 'I');
+    add('tspan', {}, tx, ' (FLOP/byte)');
+    add('text', { x: 40, y: (AREA.y0 + AREA.y1) / 2, class: 'titulo-eixo', transform: `rotate(-90 40 ${(AREA.y0 + AREA.y1) / 2})` }, eixos, 'desempenho (TFLOP/s)');
+
+    // Etapa 1: a banda limita — desempenho = banda × intensidade.
+    const area = add('g', { 'clip-path': 'url(#area-teto)' });
+    const iTopo = P_MAX / BANDA;
+    add('path', { d: `M${X(0)} ${Y(0)}L${X(TRANSICAO)} ${Y(PICO)}`, pathLength: 1, ...staged(1, 0, 'linha banda desenho') }, area);
+    add('path', { d: `M${X(TRANSICAO)} ${Y(PICO)}L${X(iTopo)} ${Y(P_MAX)}`, pathLength: 1, ...staged(1, 0.45, 'linha banda desenho acima') }, area);
+    // Rótulo ao longo da diagonal, do lado de baixo; a rotação fica num grupo externo, porque a
+    // regra de etapas zera o transform do elemento que aparece.
+    const ang = Math.atan2(Y(PICO) - Y(0), X(TRANSICAO) - X(0)) * 180 / Math.PI;
+    const xb = X(120) + 36, yb = Y(limite(120));
+    add('text', { x: xb, y: yb, ...staged(1, 0.6, 'rotulo banda') }, add('g', { transform: `rotate(${ang} ${xb} ${yb})` }), 'banda: 768 GB/s');
+
+    // Etapa 2: o teto de cálculo, a transição e as duas regiões.
+    add('path', { d: `M${X(TRANSICAO)} ${Y(PICO)}H${X(I_MAX)}`, pathLength: 1, ...staged(2, 0, 'linha pico desenho') }, area);
+    add('text', { x: X(700), y: Y(PICO) - 18, ...staged(2, 0.3, 'rotulo pico') }, svg, 'pico de cálculo: 155 TFLOP/s');
+    add('path', { d: `M${X(TRANSICAO)} ${Y(PICO)}V${Y(0)}`, ...staged(2, 0.4, 'transicao') }, area);
+    add('text', { x: X(TRANSICAO) + 14, y: Y(0) - 46, ...staged(2, 0.45, 'rotulo-transicao inicio') }, svg, 'transição ≈ 200 FLOP/byte');
+    add('text', { x: X(TRANSICAO) + 14, y: Y(0) - 16, ...staged(2, 0.45, 'rotulo-transicao detalhe inicio') }, svg, '155 TFLOP/s ÷ 768 GB/s');
+    // Nomes das regiões como cabeçalhos das duas faixas, acima do gráfico.
+    add('text', { x: X(TRANSICAO / 2), y: AREA.y0 - 22, ...staged(2, 0.7, 'rotulo-regiao memoria') }, svg, 'limitado pela memória');
+    add('text', { x: X(650), y: AREA.y0 - 22, ...staged(2, 0.7, 'rotulo-regiao calculo') }, svg, 'limitado pelo cálculo');
+
+    // Etapa 3: posições do decode (batch 1) e do prefill (2.048 tokens), as da tabela do slide 7.
+    function operacao(i, delay, cls, texto, xTexto, yTexto, ancora) {
+      const g = add('g', staged(3, delay, `operacao ${cls}`));
+      const x = X(i), y = Y(limite(i));
+      add('path', { d: `M${x} ${y}L${xTexto + (ancora === 'fim' ? 10 : -10)} ${yTexto - 8}`, class: 'guia' }, g);
+      add('circle', { cx: x, cy: y, r: 11, class: 'ponto' }, g);
+      add('text', { x: xTexto, y: yTexto, class: `rotulo-op ${ancora}` }, g, texto[0]);
+      add('text', { x: xTexto, y: yTexto + 30, class: `rotulo-op detalhe ${ancora}` }, g, texto[1]);
+    }
+    operacao(1, 0, 'decode', ['decode · 1 FLOP/byte', `${br(limite(1) / T, 2)} TFLOP/s: ${br(limite(1) / PICO * 100, 1)} % do pico`], X(250), Y(48 * T), 'inicio');
+    operacao(1024, 0.35, 'prefill', ['prefill · 1.024 FLOP/byte', '155 TFLOP/s: no teto'], X(1024) - 24, Y(PICO) + 56, 'fim');
+  })();
+  </script>
+  <script>
+  // Slide 9: bytes lidos por token no Pythia-1B (FP16, batch 1, 1.024 posições). Mesmos números do
+  // laboratório (js/modelo.js), conferidos contra verificacao/. Etapas: (1) pesos armazenados,
+  // (2) o embedding fica de fora: pesos lidos, (3) mais o KV cache, (4) total por token.
+  (() => {
+    const svg = document.getElementById('bytes-token');
+    const NS = 'http://www.w3.org/2000/svg';
+    const GB = 1e9;
+    const PESOS = 1011781632 * 2;                     // 2.023.563.264 bytes
+    const EMB = 50304 * 2048 * 2;                     // 206.045.184 bytes, embedding de entrada
+    const LIDOS = PESOS - EMB;                        // 1.817.518.080 bytes
+    const KV = 1024 * 2 * 16 * 8 * 256 * 2;           // 134.217.728 bytes = 1.024 × 131.072 bytes (≈ 131 KB)
+    const X0 = 60, ESC = 1000 / PESOS, H = 76;         // px por byte: a barra de pesos tem 1.000 px
+    const YA = 72, YB = 300;
+    const gb = b => (b / GB).toLocaleString('pt-BR', { minimumFractionDigits: 3, maximumFractionDigits: 3 }) + ' GB';
+    const w = b => b * ESC;
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    const defs = add('defs', {});
+    const hach = add('pattern', { id: 'hachura-bytes', width: 10, height: 10, patternUnits: 'userSpaceOnUse', patternTransform: 'rotate(45)' }, defs);
+    add('rect', { width: 10, height: 10, class: 'hachura-fundo' }, hach);
+    add('line', { x1: 0, y1: 0, x2: 0, y2: 10, class: 'hachura-linha' }, hach);
+
+    // Etapa 1: pesos armazenados.
+    const a = add('g', staged(1, 0));
+    add('text', { x: X0, y: YA - 20, class: 'nome inicio' }, a, 'pesos armazenados');
+    add('rect', { x: X0, y: YA, width: w(PESOS), height: H, rx: 8, class: 'seg pesos' }, a);
+    add('text', { x: X0 + w(PESOS) + 18, y: YA + H / 2 + 11, class: 'valor inicio' }, a, gb(PESOS));
+    add('text', { x: X0, y: YA + H + 40, class: 'detalhe inicio' }, a, '1.011.781.632 parâmetros × 2 bytes');
+
+    // Etapa 2: o embedding de entrada só tem 1 linha lida por token; o resto é o que se lê.
+    const e = add('g', staged(2, 0));
+    add('rect', { x: X0 + w(LIDOS), y: YA, width: w(EMB), height: H, class: 'seg emb' }, e);
+    add('text', { x: X0 + w(PESOS), y: YA + H + 40, class: 'detalhe emb fim' }, e, 'embedding (206 MB): só 1 linha (4 KB) por token');
+    // Linha de alinhamento entre as barras, abaixo da anotação do embedding.
+    add('path', { d: `M${X0 + w(LIDOS)} ${YA + H + 56}V${YB - 8}`, ...staged(2, 0.3, 'guia') });
+    add('text', { x: X0, y: YB - 20, ...staged(2, 0.3, 'nome inicio') }, svg, 'lido por token');
+    add('rect', { x: X0, y: YB, width: w(LIDOS), height: H, rx: 8, ...staged(2, 0.4, 'seg pesos cresce') });
+    add('text', { x: X0 + w(LIDOS) / 2, y: YB + H / 2 + 11, ...staged(2, 0.8, 'dentro') }, svg, `pesos: ${gb(LIDOS)}`);
+
+    // Etapa 3: o KV cache de 1.024 posições.
+    add('rect', { x: X0 + w(LIDOS), y: YB, width: w(KV), height: H, ...staged(3, 0, 'seg kv cresce') });
+    add('text', { x: X0 + w(LIDOS + KV) + 18, y: YB + 30, ...staged(3, 0.3, 'valor kv inicio') }, svg, `+ KV cache: ${gb(KV)}`);
+    add('text', { x: X0 + w(LIDOS + KV) + 18, y: YB + 62, ...staged(3, 0.3, 'detalhe inicio') }, svg, '1.024 posições × 131 KB');
+
+    // Etapa 4: total lido por token.
+    const t = add('g', staged(4, 0));
+    add('path', { d: `M${X0} ${YB + H + 10}v14H${X0 + w(LIDOS + KV)}v-14`, class: 'colchete' }, t);
+    add('text', { x: X0 + w(LIDOS + KV) / 2, y: YB + H + 82, class: 'total' }, t, `≈ ${gb(LIDOS + KV)} lidos por token`);
+    add('text', { x: X0 + w(LIDOS + KV) / 2, y: YB + H + 122, class: 'detalhe' }, t, `${gb(LIDOS)} de pesos + ${gb(KV)} de KV cache`);
+  })();
+  </script>
+  <script>
+  // Slide 11: capacidade. Dois depósitos com uma vaga por caixa de 4 GB: 8 na RTX 5090 (32 GB) e
+  // 32 no DGX Spark (128 GB). Etapas: (1) depósitos vazios, (2) carga de 16 GB nos dois,
+  // (3) a carga cresce para 64 GB e transborda da RTX 5090, (4) o que fazer quando não cabe.
+  (() => {
+    const svg = document.getElementById('cabe');
+    const NS = 'http://www.w3.org/2000/svg';
+    const P = 52, B = 42, PAD = 24, GY = 450, TELHADO = 46;
+    const lado = n => 2 * PAD + n * P - (P - B);       // largura (ou altura) de n vagas
+    const RTX = { x: 40, cols: 4, rows: 2 }, PILHA = { x: 310, cols: 4, rows: 2 };
+    const SPARK = { x: 1340 - lado(8), cols: 8, rows: 4 };
+    const centro = d => d.x + lado(d.cols) / 2;
+    // Canto superior esquerdo da vaga s, preenchida da esquerda para a direita, de baixo para cima.
+    const vaga = (d, s) => ({ x: d.x + PAD + (s % d.cols) * P, y: GY - PAD - B - Math.floor(s / d.cols) * P });
+    // Na RTX 5090, o que passa de 8 vagas fica fora do depósito, na pilha ao lado.
+    const destino = (d, s) => d === RTX && s >= 8 ? vaga(PILHA, s - 8) : vaga(d, s);
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+
+    // Etapa 1: os dois depósitos, com as vagas vazias.
+    add('path', { d: `M20 ${GY}H1350`, ...staged(1, 0, 'chao') });
+    function deposito(d, nome, cap, tipoMem, delay) {
+      const w = lado(d.cols), h = lado(d.rows), topo = GY - h, cx = centro(d);
+      const g = add('g', staged(1, delay));
+      add('text', { x: cx, y: 34, class: 'nome' }, g, nome);
+      const sub = add('text', { x: cx, y: 68, class: 'sub' }, g);
+      add('tspan', { class: 'cap' }, sub, cap);
+      add('tspan', {}, sub, ` · ${tipoMem}`);
+      add('path', { d: `M${d.x} ${GY}V${topo}L${cx} ${topo - TELHADO}L${d.x + w} ${topo}V${GY}Z`, class: 'predio' }, g);
+      for (let r = 0; r < d.rows; r++)
+        add('path', { d: `M${d.x + 12} ${GY - PAD + 5 - r * P}H${d.x + w - 12}`, class: 'prateleira' }, g);
+      // Vagas um pouco menores que as caixas, para o tracejado não aparecer em volta delas.
+      for (let s = 0; s < d.cols * d.rows; s++) {
+        const { x, y } = vaga(d, s);
+        add('rect', { x: x + 1.5, y: y + 1.5, width: B - 3, height: B - 3, rx: 5, class: 'vaga' }, g);
+      }
+    }
+    deposito(RTX, 'GeForce RTX 5090', '32 GB', 'GDDR7 dedicada', 0);
+    deposito(SPARK, 'DGX Spark', '128 GB', 'LPDDR5X unificada (CPU + GPU)', 0.3);
+
+    const caixa = (d, s, step, delay) =>
+      add('rect', { ...destino(d, s), width: B, height: B, rx: 6, ...staged(step, delay, 'caixa rise') });
+    function status(d, step, delay, partes, cls = '') {
+      const t = add('text', { x: centro(d), y: GY + 48, ...staged(step, delay, `status ${cls}`) });
+      partes.forEach(([texto, c]) => add('tspan', c ? { class: c } : {}, t, texto));
+    }
+
+    // Contorno do que não cabe na RTX 5090 (etapa 3), criado antes para ficar atrás das caixas.
+    const pTopo = GY - lado(PILHA.rows);
+    add('rect', { x: PILHA.x, y: pTopo, width: lado(PILHA.cols), height: lado(PILHA.rows), rx: 10, ...staged(3, 1.5, 'excesso') });
+
+    // Etapa 2: 16 GB (4 caixas) cabem nos dois.
+    for (const d of [RTX, SPARK]) {
+      for (let s = 0; s < 4; s++) caixa(d, s, 2, 0.2 + s * 0.08);
+      status(d, 2, 0.8, [['16 GB: '], ['cabe', 'ok']], 'ate2');
+    }
+
+    // Etapa 3: 64 GB (16 caixas). Na RTX 5090, 8 caixas ficam de fora.
+    for (const d of [RTX, SPARK])
+      for (let s = 4; s < 16; s++) caixa(d, s, 3, 0.6 + (s - 4) * 0.06);
+    add('text', { x: centro(PILHA), y: pTopo - 18, ...staged(3, 1.5, 'falta') }, svg, 'faltam 32 GB');
+    status(RTX, 3, 1.7, [['64 GB: '], ['não cabe', 'nao']]);
+    status(SPARK, 3, 1.7, [['64 GB: '], ['cabe', 'ok'], [', sobram 64 GB']]);
+
+    // Etapa 4: o que muda para caber na RTX 5090.
+    const CX = PILHA.x + lado(PILHA.cols) + 26, CW = SPARK.x - 24 - CX, CY = 236;
+    const c = add('g', staged(4, 0));
+    add('rect', { x: CX, y: CY, width: CW, height: 214, rx: 14, class: 'cartao' }, c);
+    add('text', { x: CX + 20, y: CY + 40, class: 'cartao-titulo inicio' }, c, 'Para caber:');
+    ['quantizar', 'dividir entre GPUs', 'offload para a RAM'].forEach((t, i) =>
+      add('text', { x: CX + 20, y: CY + 80 + i * 36, class: 'item inicio' }, c, '• ' + t));
+    add('text', { x: CX + 20, y: CY + 192, class: 'nota inicio' }, c, 'e o desempenho muda');
+  })();
+  </script>
+  <script>
+  // Slide 12: a mesma carga de 16 GB nos dois depósitos do slide 11, agora lida pela GPU a cada token.
+  // A largura de cada canal é proporcional à banda nominal (1.792 e 273 GB/s). Etapas: (1) depósitos
+  // com a carga, (2) canais, (3) tempo para ler os 16 GB, (4) teto de tokens/s.
+  (() => {
+    const svg = document.getElementById('ler');
+    const NS = 'http://www.w3.org/2000/svg';
+    const P = 52, B = 42, PAD = 24, TELHADO = 46;
+    const lado = n => 2 * PAD + n * P - (P - B);
+    const PAREDE = 520, GPU_X = 760, GPU_W = 80, COL = 880, CARGA = 16;
+    const ESP_SPARK = 18, BARRA_MAX = 260;               // canal do Spark (px); barra de tempo mais longa (px)
+    const DISP = [
+      { nome: 'GeForce RTX 5090', sub: '32 GB · GDDR7 dedicada', banda: 1792, cols: 4, rows: 2, chao: 210,
+        tex: '\\dfrac{1{.}792\\ \\text{GB/s}}{16\\ \\text{GB/token}} = 112\\ \\text{tokens/s}' },
+      { nome: 'DGX Spark', sub: '128 GB · LPDDR5X unificada', banda: 273, cols: 8, rows: 4, chao: 560,
+        tex: '\\dfrac{273\\ \\text{GB/s}}{16\\ \\text{GB/token}} \\approx 17\\ \\text{tokens/s}' },
+    ];
+    const TEMPO_MAX = CARGA / 273;                       // segundos para ler 16 GB no Spark
+    const ms = d => (CARGA / d.banda * 1000).toLocaleString('pt-BR', { maximumFractionDigits: 1 });
+
+    function add(tag, attrs, parent = svg, text) {
+      const node = document.createElementNS(NS, tag);
+      for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+      if (text) node.textContent = text;
+      parent.append(node);
+      return node;
+    }
+    const staged = (step, delay, cls = '') => ({ 'data-s': step, style: `--d:${delay}`, class: cls });
+    const defs = add('defs', {});
+
+    // Legenda, à esquerda do depósito da RTX 5090.
+    const leg = add('g', staged(1, 0.5));
+    const carga = add('text', { x: 0, y: 104, class: 'legenda inicio' }, leg);
+    add('tspan', {}, carga, 'mesma carga: ');
+    add('tspan', { class: 'forte' }, carga, '16 GB');
+
+    DISP.forEach((d, i) => {
+      const w = lado(d.cols), h = lado(d.rows), x0 = PAREDE - w, topo = d.chao - h, meio = (topo + d.chao) / 2;
+      const esp = ESP_SPARK * d.banda / 273;             // largura do canal proporcional à banda
+      const vaga = s => ({ x: x0 + PAD + (s % d.cols) * P, y: d.chao - PAD - B - Math.floor(s / d.cols) * P });
+
+      // Etapa 1: depósito com a carga e nome do equipamento.
+      const g = add('g', staged(1, i * 0.3));
+      add('path', { d: `M${x0 - 20} ${d.chao}H${PAREDE + 20}`, class: 'chao' }, g);
+      add('path', { d: `M${x0} ${d.chao}V${topo}L${x0 + w / 2} ${topo - TELHADO}L${PAREDE} ${topo}V${d.chao}Z`, class: 'predio' }, g);
+      for (let r = 0; r < d.rows; r++)
+        add('path', { d: `M${x0 + 12} ${d.chao - PAD + 5 - r * P}H${PAREDE - 12}`, class: 'prateleira' }, g);
+      for (let s = 0; s < d.cols * d.rows; s++) {
+        const v = vaga(s);
+        if (s < 4) add('rect', { ...v, width: B, height: B, rx: 6, class: 'caixa' }, g);
+        else add('rect', { x: v.x + 1.5, y: v.y + 1.5, width: B - 3, height: B - 3, rx: 5, class: 'vaga' }, g);
+      }
+      add('text', { x: COL, y: meio - 70, class: 'nome inicio' }, g, d.nome);
+      add('text', { x: COL, y: meio - 40, class: 'sub inicio' }, g, d.sub);
+
+      // Etapa 2: canal até a GPU, com o fluxo de dados.
+      const c = add('g', staged(2, i * 0.2));
+      const clip = add('clipPath', { id: `canal-${i}` }, defs);
+      add('rect', { x: PAREDE, y: meio - esp / 2, width: GPU_X - PAREDE, height: esp }, clip);
+      add('rect', { x: PAREDE, y: meio - esp / 2, width: GPU_X - PAREDE, height: esp, class: 'canal' }, c);
+      const fluxo = add('g', { 'clip-path': `url(#canal-${i})` }, c);
+      const N = 8, L = GPU_X - PAREDE + 12;
+      for (let k = 0; k < N; k++)
+        add('rect', { x: PAREDE - 12, y: meio - esp / 2 + 3, width: 12, height: esp - 6, rx: 2,
+          class: 'dado loop', style: `--p:${k / N};--L:${L}px` }, fluxo);
+      add('text', { x: (PAREDE + GPU_X) / 2, y: meio - esp / 2 - 14, class: 'banda' }, c,
+        `${d.banda.toLocaleString('pt-BR')} GB/s`);
+      add('rect', { x: GPU_X, y: meio - 71, width: GPU_W, height: 142, rx: 12, class: 'gpu' }, c);
+      add('text', { x: GPU_X + GPU_W / 2, y: meio + 8, class: 'gpu-rotulo' }, c, 'GPU');
+
+      // Etapa 3: tempo para ler os 16 GB, na mesma escala; as barras crescem à mesma velocidade.
+      const t = CARGA / d.banda, len = BARRA_MAX * t / TEMPO_MAX, dur = 2.6 * t / TEMPO_MAX;
+      add('rect', { x: COL, y: meio - 12, width: len, height: 24, rx: 4, ...staged(3, 0, 'tempo cresce'), style: `--d:0;--t:${dur}` });
+      add('text', { x: COL + len + 14, y: meio + 8, ...staged(3, dur, 'tempo-rotulo inicio') }, svg, `≈ ${ms(d)} ms`);
+
+      // Etapa 4: teto de tokens/s.
+      const fo = add('foreignObject', { x: COL - 4, y: meio + 30, width: 1360 - COL + 4, height: 100, ...staged(4, i * 0.3) });
+      const eq = document.createElement('div');
+      eq.className = 'eq';
+      fo.append(eq);
+      if (window.katex) katex.render(d.tex, eq, { throwOnError: false });
+      else eq.textContent = d.tex;
+    });
+    add('text', { x: COL, y: 574, ...staged(4, 0.8, 'legenda inicio') }, svg, 'tetos com banda nominal, não medições');
+  })();
+  </script>
+  <script>
+  (() => {
+    const W = 1600, H = 900, ZOOM_MIN = 0.5, ZOOM_MAX = 2.5, ZOOM_STEP = 0.1;
+    const slides = [...document.querySelectorAll('.slide')];
+    const frame = document.getElementById('stage-frame');
+    const stage = document.getElementById('stage');
+    const panel = document.getElementById('indice');
+    const toggle = document.getElementById('menu-toggle');
+    const list = document.getElementById('index-list');
+    const stepDots = document.getElementById('step-dots');
+    const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    let current = -1;
+    let step = 0;
+    let zoom = 1;
+    try { localStorage.removeItem('mb-zoom'); } catch {}
+
+    // Índice gerado a partir dos títulos dos slides.
+    slides.forEach((slide, i) => {
+      const li = document.createElement('li');
+      const a = document.createElement('a');
+      a.href = '#' + slide.id;
+      a.textContent = slide.dataset.title;
+      a.addEventListener('click', () => setMenu(false));
+      li.append(a);
+      list.append(li);
+    });
+
+    function fit() {
+      const scale = Math.min(innerWidth / W, innerHeight / H) * zoom;
+      stage.style.transform = `scale(${scale})`;
+      frame.style.width = W * scale + 'px';
+      frame.style.height = H * scale + 'px';
+    }
+
+    function setZoom(value) {
+      zoom = Math.round(Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, value)) * 10) / 10;
+      fit();
+    }
+
+    const pad = n => String(n).padStart(2, '0');
+    const stepsOf = slide => Number(slide.dataset.steps || 0);
+
+    // A capa conta como página 1; abertura e agradecimento não exibem o indicador.
+    slides.forEach((slide, i) => {
+      if (slide.classList.contains('cover')) return;
+      const counter = document.createElement('span');
+      counter.className = 'counter';
+      counter.textContent = `${pad(i + 1)} / ${pad(slides.length)}`;
+      counter.setAttribute('aria-label', `Página ${i + 1} de ${slides.length}`);
+      slide.append(counter);
+    });
+
+    // Etapas cumulativas: a classe sN mostra os elementos da etapa N; nowN dispara os destaques
+    // só da etapa recém-alcançada. Sem animação (voltar, movimento reduzido), tudo aparece pronto.
+    function setStep(slide, n, animate) {
+      slide.classList.toggle('instant', !animate);
+      for (let k = 1; k <= stepsOf(slide); k++) {
+        slide.classList.toggle('s' + k, k <= n);
+        slide.classList.toggle('now' + k, animate && k === n);
+      }
+      step = n;
+      stepDots.innerHTML = stepsOf(slide) > 1
+        ? Array.from({ length: stepsOf(slide) }, (_, k) => `<i${k < n ? ' class="on"' : ''}></i>`).join('') : '';
+    }
+
+    // Ao entrar: vídeos reiniciam, zoom volta a 100% e a primeira etapa é animada
+    // (ou o quadro completo, ao voltar de um slide seguinte).
+    function go(index, atEnd = false) {
+      index = Math.min(slides.length - 1, Math.max(0, index));
+      if (index === current) return;
+      if (current >= 0) setZoom(1);
+      current = index;
+      slides.forEach((slide, i) => {
+        const active = i === current;
+        slide.classList.toggle('active', active);
+        slide.setAttribute('aria-hidden', String(!active));
+        slide.querySelectorAll('video').forEach(video => {
+          if (active && !reduceMotion) { video.currentTime = 0; video.play().catch(() => {}); }
+          else video.pause();
+        });
+      });
+      const slide = slides[current];
+      if (atEnd || reduceMotion) setStep(slide, stepsOf(slide), false);
+      else {
+        setStep(slide, 0, false);
+        void slide.getBoundingClientRect();
+        setStep(slide, Math.min(1, stepsOf(slide)), true);
+      }
+      list.querySelectorAll('a').forEach((a, i) => a.toggleAttribute('aria-current', i === current));
+      const hash = '#' + slide.id;
+      if (location.hash !== hash) history.replaceState(null, '', hash);
+    }
+
+    function next() {
+      const slide = slides[current];
+      if (step < stepsOf(slide)) setStep(slide, step + 1, !reduceMotion);
+      else go(current + 1);
+    }
+
+    function prev() {
+      if (step > 1) setStep(slides[current], step - 1, false);
+      else go(current - 1, true);
+    }
+
+    function fromHash() {
+      const i = slides.findIndex(s => '#' + s.id === location.hash);
+      go(i < 0 ? 0 : i);
+    }
+
+    function setMenu(open) {
+      panel.hidden = !open;
+      toggle.setAttribute('aria-expanded', String(open));
+      toggle.setAttribute('aria-label', open ? 'Fechar índice' : 'Abrir índice');
+      toggle.classList.toggle('open', open);
+    }
+
+    toggle.addEventListener('click', () => setMenu(panel.hidden));
+    document.getElementById('print-pdf').addEventListener('click', () => print());
+    document.getElementById('zoom-in').addEventListener('click', () => setZoom(zoom + ZOOM_STEP));
+    document.getElementById('zoom-out').addEventListener('click', () => setZoom(zoom - ZOOM_STEP));
+    addEventListener('resize', fit);
+    addEventListener('hashchange', fromHash);
+    addEventListener('keydown', event => {
+      if (event.ctrlKey || event.metaKey || event.altKey) return;
+      const key = event.key;
+      if ((key === ' ' || key === 'Enter') && event.target.closest('button, a')) return;
+      if (key === 'Escape') setMenu(false);
+      else if (key === '+' || key === '=') setZoom(zoom + ZOOM_STEP);
+      else if (key === '-') setZoom(zoom - ZOOM_STEP);
+      else if (key === '0') setZoom(1);
+      else if (['ArrowRight', ' ', 'Enter'].includes(key)) next();
+      else if (key === 'ArrowLeft') prev();
+      else if (key === 'PageDown') go(current + 1);
+      else if (key === 'PageUp') go(current - 1, true);
+      else if (key === 'Home') go(0);
+      else if (key === 'End') go(slides.length - 1, true);
+      else return;
+      event.preventDefault();
+    });
+
+    fit();
+    fromHash();
+  })();
+  </script>
+</body>
+</html>
