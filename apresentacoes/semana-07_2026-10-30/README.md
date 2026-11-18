@@ -5,7 +5,7 @@
 | **Tema** | Memória e banda: o roofline, por que decode é lento | Infraestrutura de inferência 2/2 — KV cache e batching |
 | **Quem** | João Vitor | Beatriz |
 | **Pasta** | `principal_joao_memoria-banda-e-roofline/` | `keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/` |
-| **Material** | — | [Slides (PDF)](keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/kv-cache-e-batching.pdf) · [Código: batching.py](keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/batching.py) |
+| **Material** | [Slides (PDF)](principal_joao_memoria-banda-e-roofline/memoria-e-banda.pdf) · [Apresentação interativa + laboratório](principal_joao_memoria-banda-e-roofline/html_com_lab/index.html) · [Notebook: memory_bandwidth.ipynb](principal_joao_memoria-banda-e-roofline/experimento_memory_bandwidth/memory_bandwidth.ipynb) | [Slides (PDF)](keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/kv-cache-e-batching.pdf) · [Código: batching.py](keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/batching.py) |
 
 ## Perguntas a fechar
 
