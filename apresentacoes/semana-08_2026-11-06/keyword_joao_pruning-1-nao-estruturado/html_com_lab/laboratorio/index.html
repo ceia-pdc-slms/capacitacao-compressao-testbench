@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101117">
+  <title>Pruning não estruturado · Laboratório</title>
+  <link rel="stylesheet" href="../vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="../style.css?v=82">
+  <link rel="stylesheet" href="lab.css?v=46">
+</head>
+<body class="lab">
+  <header class="lab-top">
+    <a class="lab-back" href="../index.html">← Apresentação</a>
+    <nav class="lab-nav" aria-label="Experimentos">
+      <button type="button" data-ir="1"><span class="n">1</span>Qual peso sai?</button>
+      <button type="button" data-ir="2"><span class="n">2</span>Desligue pesos</button>
+      <button type="button" data-ir="3"><span class="n">3</span>SparseGPT passo a passo</button>
+      <button type="button" data-ir="4"><span class="n">4</span>Chegue a 2×</button>
+    </nav>
+  </header>
+
+  <main class="lab-main">
+    <!-- 1 · Magnitude × Wanda numa rede de 2 entradas -->
+    <section class="lab-view" id="exp-1" hidden>
+      <div class="lab-cab">
+        <span class="lab-kicker">Experimento 1 de 4</span>
+        <h2>Qual peso sai?</h2>
+        <p>Metade dos pesos desta saída será removida. Escolha a conexão que cada método corta.</p>
+      </div>
+      <div class="lab-duas">
+        <div class="cartao figura">
+          <svg id="e1-rede" class="lab-fig" viewBox="0 0 760 440" role="img" aria-label="Rede com duas entradas e uma saída."></svg>
+          <div class="lab-legenda">
+            <span><i class="traco az"></i>espessura: tamanho do peso</span>
+            <span><i class="bola rx"></i>halo: intensidade das ativações</span>
+          </div>
+        </div>
+        <div class="cartao lab-painel" id="e1-painel" aria-live="polite"></div>
+      </div>
+      <nav class="lab-pe"><span></span><button type="button" data-ir="2">Desligue pesos →</button></nav>
+    </section>
+
+    <!-- 2 · Desligar pesos de uma rede e ver o erro -->
+    <section class="lab-view" id="exp-2" hidden>
+      <div class="lab-cab">
+        <span class="lab-kicker">Experimento 2 de 4</span>
+        <h2>Desligue pesos</h2>
+        <p>Clique numa conexão para desligá-la (ou religá-la). O alvo é a saída da rede completa.</p>
+      </div>
+      <div class="lab-duas larga">
+        <div class="cartao figura">
+          <svg id="e2-rede" class="lab-fig" viewBox="0 0 900 504" role="img" aria-label="Rede neural com 4 entradas, duas camadas ocultas de 6 neurônios com tanh e 3 saídas lineares."></svg>
+          <div class="lab-legenda">
+            <span><i class="traco az"></i>peso positivo</span>
+            <span><i class="traco rx"></i>peso negativo</span>
+            <span><i class="traco off"></i>desligada</span>
+            <span>mais grossa: <span data-tex="|w|"></span> maior</span>
+          </div>
+        </div>
+        <div class="cartao lab-painel" id="e2-painel">
+          <div class="e2-leituras">
+            <div class="leitura">
+              <span class="rot">esparsidade</span>
+              <strong id="e2-esp"></strong>
+            </div>
+            <div class="leitura">
+              <span class="rot">erro <span data-tex="\lVert y - y^{*} \rVert_2^2"></span></span>
+              <strong id="e2-erro"></strong>
+              <div class="medidor" aria-hidden="true"><div id="e2-medidor"></div></div>
+            </div>
+          </div>
+          <div class="leitura">
+            <span class="rot">saídas · <span class="alvo-t">alvo</span> e <span class="atual-t">atual</span></span>
+            <svg id="e2-saidas" viewBox="0 0 320 132" role="img" aria-label="Saídas da rede: alvo e valor atual."></svg>
+          </div>
+          <div class="leitura">
+            <div class="rot-linha"><span class="rot">podar 10% das ligadas</span><button type="button" id="e2-reset" class="mini">religar tudo</button></div>
+            <div class="botoes">
+              <button type="button" id="e2-mag">menores <span data-tex="|w|"></span></button>
+              <button type="button" id="e2-wanda">menores <span data-tex="|w| \cdot |x|"></span></button>
+            </div>
+          </div>
+          <p class="info" id="e2-info" aria-live="polite"></p>
+          <p class="desafio" id="e2-ref" aria-live="polite"></p>
+        </div>
+      </div>
+      <nav class="lab-pe"><button type="button" data-ir="1" class="sec">← Qual peso sai?</button><button type="button" data-ir="3">SparseGPT passo a passo →</button></nav>
+    </section>
+
+    <!-- 3 · As contas do SparseGPT, um passo por vez -->
+    <section class="lab-view" id="exp-3" hidden>
+      <div class="lab-cab">
+        <span class="lab-kicker">Experimento 3 de 4</span>
+        <h2>SparseGPT passo a passo</h2>
+        <p>As contas para remover metade dos pesos de uma linha, compensando nos que ficam.</p>
+      </div>
+      <div class="lab-duas">
+        <div class="cartao e3-cartao">
+          <div class="e3-progresso" id="e3-progresso" role="group" aria-label="Passos"></div>
+          <div class="e3-palco" id="e3-palco" aria-live="polite"></div>
+          <div class="e3-nav">
+            <button type="button" id="e3-volta" class="sec">← Voltar</button>
+            <span id="e3-passo"></span>
+            <button type="button" id="e3-prox">Próximo passo →</button>
+          </div>
+        </div>
+        <div class="cartao lab-painel" id="e3-painel">
+          <div class="leitura">
+            <span class="rot">pesos <span data-tex="w"></span></span>
+            <div class="e3-linha" id="e3-w"></div>
+          </div>
+          <div class="leitura">
+            <span class="rot">saída <span data-tex="y = wX"></span> em 6 tokens</span>
+            <svg id="e3-graf" viewBox="0 0 420 220" role="img" aria-label="Saída por token: alvo, sem compensação e com compensação."></svg>
+            <div class="e3-leg" id="e3-leg"></div>
+          </div>
+        </div>
+      </div>
+      <nav class="lab-pe"><button type="button" data-ir="2" class="sec">← Desligue pesos</button><button type="button" data-ir="4">Chegue a 2× →</button></nav>
+    </section>
+
+    <!-- 4 · Lei de Amdahl: chegar a 2× -->
+    <section class="lab-view" id="exp-4" hidden>
+      <div class="lab-cab">
+        <span class="lab-kicker">Experimento 4 de 4</span>
+        <h2>Chegue a 2×</h2>
+        <p>O pruning zera pesos, então só acelera as contas que usam pesos. Tente deixar o modelo inteiro 2× mais rápido.</p>
+      </div>
+      <div class="lab-duas e4">
+        <div class="cartao e4-tempo">
+          <span class="rot-secao">tempo de inferência de um LLM</span>
+          <div class="e4-partes">
+            <div class="parte acel">
+              <strong>multiplicações por matrizes de pesos</strong>
+              <span>camadas lineares da atenção e do MLP: é aqui que os zeros podem ser aproveitados</span>
+            </div>
+            <div class="parte resto">
+              <strong>resto</strong>
+              <span>atenção entre tokens, normalizações, funções de ativação, amostragem: sem pesos podados, o tempo não muda</span>
+            </div>
+          </div>
+          <div class="e4-barras">
+            <div class="e4-rot">antes</div>
+            <div class="e4-trilho"><div class="e4-seg acel" id="e4-a1"></div><div class="e4-seg resto" id="e4-r1"></div></div>
+            <div class="e4-fim">100%</div>
+            <div class="e4-rot">depois</div>
+            <div class="e4-trilho"><div class="e4-seg acel" id="e4-a2"></div><div class="e4-seg resto" id="e4-r2"></div><div class="e4-meta"><span>meta: 2×</span></div></div>
+            <div class="e4-fim" id="e4-total"></div>
+          </div>
+          <div class="e4-resultado" aria-live="polite">
+            <div class="leitura grande">
+              <span class="rot">modelo inteiro</span>
+              <strong id="e4-speed"></strong>
+            </div>
+            <div class="e4-conta" id="e4-conta"></div>
+          </div>
+        </div>
+        <div class="lab-painel">
+          <div class="cartao e4-controle">
+            <label for="e4-p"><span class="simbolo p" data-tex="p"></span><span><strong>parte acelerável</strong>fração do tempo gasta nas multiplicações por pesos</span></label>
+            <output id="e4-pv" for="e4-p"></output>
+            <input type="range" id="e4-p" min="0" max="100" step="5" value="60">
+          </div>
+          <div class="cartao e4-controle">
+            <label for="e4-s"><span class="simbolo s" data-tex="s"></span><span><strong>aceleração dessa parte</strong>quantas vezes ela fica mais rápida com os zeros (≈ 1,6× com 2:4 em GPU compatível)</span></label>
+            <output id="e4-sv" for="e4-s"></output>
+            <input type="range" id="e4-s" min="1" max="20" step="0.1" value="2">
+          </div>
+          <p class="desafio" id="e4-msg" aria-live="polite"></p>
+        </div>
+      </div>
+      <nav class="lab-pe"><button type="button" data-ir="3" class="sec">← SparseGPT passo a passo</button><span></span></nav>
+    </section>
+  </main>
+
+  <script src="../vendor/katex/katex.min.js"></script>
+  <script src="js/lab.js?v=41"></script>
+  <script src="js/exp1.js?v=44"></script>
+  <script src="js/exp2.js?v=41"></script>
+  <script src="js/exp3.js?v=41"></script>
+  <script src="js/exp4.js?v=41"></script>
+</body>
+</html>

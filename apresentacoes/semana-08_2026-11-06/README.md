@@ -5,7 +5,7 @@
 | **Tema** | Quantização a fundo: FP16 → FP8 → INT4 → FP4, o que quebra e o que acelera | Pruning 1/2 — não estruturado |
 | **Quem** | Beatriz | João Vitor |
 | **Pasta** | `principal_beatriz_quantizacao-a-fundo/` | `keyword_joao_pruning-1-nao-estruturado/` |
-| **Material** | [Slides (PDF)](principal_beatriz_quantizacao-a-fundo/quantizacao-a-fundo.pdf) · [Código: quantizacao_a_fundo.py](principal_beatriz_quantizacao-a-fundo/quantizacao_a_fundo.py) | — |
+| **Material** | [Slides (PDF)](principal_beatriz_quantizacao-a-fundo/quantizacao-a-fundo.pdf) · [Código: quantizacao_a_fundo.py](principal_beatriz_quantizacao-a-fundo/quantizacao_a_fundo.py) | [Slides (PDF)](keyword_joao_pruning-1-nao-estruturado/pruning-nao-estruturado.pdf) · [Apresentação interativa + laboratório](keyword_joao_pruning-1-nao-estruturado/html_com_lab/index.html) |
 
 ## Perguntas a fechar
 
