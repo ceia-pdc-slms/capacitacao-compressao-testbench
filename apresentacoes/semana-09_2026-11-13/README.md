@@ -5,7 +5,7 @@
 | **Tema** | Runtimes de inferência: Ollama, llama.cpp, vLLM, TensorRT-LLM | Quantização 3/3 — formatos na prática e QAT/QLoRA |
 | **Quem** | Wevton | Pedro |
 | **Pasta** | `principal_wevton_runtimes-de-inferencia/` | `keyword_pedro_quantizacao-3-formatos-qat-qlora/` |
-| **Material** | — | — |
+| **Material** | [PDF](principal_wevton_runtimes-de-inferencia/runtimes_semana9.pdf)
 
 ## Perguntas a fechar
 
