@@ -5,7 +5,7 @@
 | **Tema** | Arquitetura de computadores: CPU, GPU, TPU, NPU, LPU — e o que muda para inferência | Kernels/HPC 1/2 — o que é um kernel |
 | **Quem** | Pedro | João Vitor |
 | **Pasta** | `principal_pedro_arquitetura-de-computadores/` | `keyword_joao_kernels-1-o-que-e-um-kernel/` |
-| **Material** | *sem material no repositório* | [Slides (PDF)](keyword_joao_kernels-1-o-que-e-um-kernel/kernels-o-que-e-um-kernel.pdf) · [Notebook](keyword_joao_kernels-1-o-que-e-um-kernel/kernel_hpc_01_o_que_e_um_kernel.ipynb) |
+| **Material** | [Slides (PDF)](principal_pedro_arquitetura-de-computadores/Arquitetura%20de%20Computadores.pdf) | [Slides (PDF)](keyword_joao_kernels-1-o-que-e-um-kernel/kernels-o-que-e-um-kernel.pdf) · [Notebook](keyword_joao_kernels-1-o-que-e-um-kernel/kernel_hpc_01_o_que_e_um_kernel.ipynb) |
 
 ## Perguntas a fechar
 
