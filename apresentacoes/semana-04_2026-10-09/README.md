@@ -5,7 +5,7 @@
 | **Tema** | O que é um modelo de linguagem: tokens, vocabulário, embeddings | Testbench 1/2 — métricas de desempenho e procedência |
 | **Quem** | Marcos | Pedro |
 | **Pasta** | `principal_marcos_modelo-de-linguagem-tokens-e-embeddings/` | `keyword_pedro_testbench-1-metricas-e-procedencia/` |
-| **Material** | *sem material no repositório* | *sem material no repositório* |
+| **Material** | *sem material no repositório* | [Slides (PDF)](keyword_pedro_testbench-1-metricas-e-procedencia/Testbench.pdf) |
 
 ## Perguntas a fechar
 
