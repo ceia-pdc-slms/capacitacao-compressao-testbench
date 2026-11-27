@@ -122,8 +122,15 @@ const LABS = [
   { id: "quantizacao", tipo: "oficina", titulo: "Quantização a fundo", semana: 8, quem: "Beatriz", status: "ok",
     desc: "FP16, FP8, INT4 e FP4 bit a bit, o que um outlier faz com a escala, o que quebra no modelo e por que 4× menos bytes não dão 4× mais tok/s.",
     href: "laboratorios/quantizacao/quantizacao-a-fundo.html" },
-  { id: "transformer", tipo: "oficina", titulo: "Transformer por dentro", semana: 5, quem: "João", status: "breve",
-    desc: "Atenção, pesos e funções de ativação. Onde estão os parâmetros de um modelo de 1B, camada por camada.", href: null },
+  { id: "transformer", tipo: "oficina", titulo: "Transformer por dentro", semana: 5, quem: "João", status: "ok",
+    desc: "Atenção, pesos e funções de ativação. Onde estão os parâmetros de um modelo de 1B, camada por camada.",
+    href: "apresentacoes/semana-05_2026-10-16/principal_joao_transformer-por-dentro/html_com_lab/laboratorio/index.html" },
+  { id: "roofline", tipo: "oficina", titulo: "Memória e banda: o roofline", semana: 7, quem: "João", status: "ok",
+    desc: "Quando uma operação é limitada pela banda e quando é limitada pelo cálculo. Mude a banda e o pico de cálculo e veja o que acontece com decode e prefill.",
+    href: "apresentacoes/semana-07_2026-10-30/principal_joao_memoria-banda-e-roofline/html_com_lab/laboratorio/index.html" },
+  { id: "pruning", tipo: "keyword", titulo: "Pruning não estruturado", semana: 8, quem: "João", status: "ok",
+    desc: "Qual peso sai, o que acontece ao desligar conexões, o SparseGPT passo a passo e o que falta para o pruning dar 2× de velocidade.",
+    href: "apresentacoes/semana-08_2026-11-06/keyword_joao_pruning-1-nao-estruturado/html_com_lab/laboratorio/index.html" },
   { id: "testbench", tipo: "ferramenta", titulo: "Testbench", semana: null, quem: "time", status: "proto",
     desc: "A bancada de medição: pipelines configuráveis, execução com log ao vivo e comparação de resultados com a procedência lado a lado.",
     href: "testbench/index.html" },
@@ -132,12 +139,22 @@ const TIPOS = { todos: "Todos", oficina: "Oficinas", keyword: "Keywords", ferram
 const STATUS = { ok: ["Disponível", "ok"], proto: ["Protótipo", "acc"], breve: ["Em breve", ""] };
 
 const MATERIAIS = [
+  ["Runtimes de inferência", "Principal · semana 9 · Wevton", "apresentacoes/semana-09_2026-11-13/principal_wevton_runtimes-de-inferencia/runtimes_semana9.pdf"],
+  ["Pruning não estruturado", "Keyword · semana 8 · João", "apresentacoes/semana-08_2026-11-06/keyword_joao_pruning-1-nao-estruturado/pruning-nao-estruturado.pdf"],
+  ["Pruning: apresentação interativa", "Keyword · semana 8 · João", "apresentacoes/semana-08_2026-11-06/keyword_joao_pruning-1-nao-estruturado/html_com_lab/index.html"],
   ["Quantização a fundo", "Principal · semana 8 · Beatriz", "apresentacoes/semana-08_2026-11-06/principal_beatriz_quantizacao-a-fundo/quantizacao-a-fundo.pdf"],
   ["quantizacao_a_fundo.py: bytes × tok/s", "Principal · semana 8 · Beatriz", "apresentacoes/semana-08_2026-11-06/principal_beatriz_quantizacao-a-fundo/quantizacao_a_fundo.py"],
   ["KV cache e batching", "Keyword · semana 7 · Beatriz", "apresentacoes/semana-07_2026-10-30/keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/kv-cache-e-batching.pdf"],
   ["batching.py: 20 pedidos × 20 vezes um", "Keyword · semana 7 · Beatriz", "apresentacoes/semana-07_2026-10-30/keyword_beatriz_infraestrutura-de-inferencia-2-kv-cache-e-batching/batching.py"],
+  ["Memória e banda: o roofline", "Principal · semana 7 · João", "apresentacoes/semana-07_2026-10-30/principal_joao_memoria-banda-e-roofline/memoria-e-banda.pdf"],
+  ["Memória e banda: apresentação interativa", "Principal · semana 7 · João", "apresentacoes/semana-07_2026-10-30/principal_joao_memoria-banda-e-roofline/html_com_lab/index.html"],
+  ["memory_bandwidth.ipynb", "Principal · semana 7 · João", "apresentacoes/semana-07_2026-10-30/principal_joao_memoria-banda-e-roofline/experimento_memory_bandwidth/memory_bandwidth.ipynb"],
   ["Como um modelo gera texto", "Principal · semana 6 · Beatriz", "apresentacoes/semana-06_2026-10-23/principal_beatriz_como-um-modelo-gera-texto/como-um-modelo-gera-texto.pdf"],
   ["gera_texto.py: ler × escrever", "Principal · semana 6 · Beatriz", "apresentacoes/semana-06_2026-10-23/principal_beatriz_como-um-modelo-gera-texto/gera_texto.py"],
+  ["Transformer por dentro", "Principal · semana 5 · João", "apresentacoes/semana-05_2026-10-16/principal_joao_transformer-por-dentro/Transformer por dentro.pdf"],
+  ["Transformer: apresentação interativa", "Principal · semana 5 · João", "apresentacoes/semana-05_2026-10-16/principal_joao_transformer-por-dentro/html_com_lab/index.html"],
+  ["Testbench: métricas e procedência", "Keyword · semana 4 · Pedro", "apresentacoes/semana-04_2026-10-09/keyword_pedro_testbench-1-metricas-e-procedencia/Testbench.pdf"],
+  ["Arquitetura de computadores", "Principal · semana 3 · Pedro", "apresentacoes/semana-03_2026-10-02/principal_pedro_arquitetura-de-computadores/Arquitetura de Computadores.pdf"],
   ["Docker na Prática", "Oficina · semana 2 · Beatriz", "apresentacoes/semana-02_2026-09-25/principal_beatriz_docker-na-pratica/docker-na-pratica.pptx"],
   ["Quantização: representação numérica", "Keyword · semana 2 · Beatriz", "apresentacoes/semana-02_2026-09-25/keyword_beatriz_quantizacao-1-representacao-numerica/quantizacao-representacao-numerica.pdf"],
   ["Guia de estudo: quantização", "Keyword · semana 2 · Beatriz", "apresentacoes/semana-02_2026-09-25/keyword_beatriz_quantizacao-1-representacao-numerica/guia-de-estudo.md"],
@@ -178,8 +195,19 @@ function renderMats() {
   $("mats").innerHTML = MATERIAIS.map(([t, d, h]) => `<a class="card mat" href="${encodeURI(h)}"><span class="ext">${h.split(".").pop()}</span><div><b>${esc(t)}</b><span>${esc(d)}</span></div></a>`).join("");
 }
 
+/* No GitHub Pages um link para .md abre o Markdown cru, sem links clicáveis.
+   Lá, troca pelo HTML que o Pages gera (README.md -> pasta/, x.md -> x.html).
+   Aberto do disco ou pela bancada local, os links .md ficam como estão. */
+function linksDoPages() {
+  if (!location.hostname.endsWith("github.io")) return;
+  document.querySelectorAll('a[href$=".md"]').forEach(a => {
+    const h = a.getAttribute("href");
+    a.setAttribute("href", /(^|\/)README\.md$/.test(h) ? h.replace(/README\.md$/, "") : h.replace(/\.md$/, ".html"));
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
-  renderFiltro(); renderGrade(); renderMats();
+  renderFiltro(); renderGrade(); renderMats(); linksDoPages();
   document.documentElement.dataset.pronto = "1";
 });
 </script>
